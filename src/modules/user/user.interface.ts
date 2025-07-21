@@ -15,12 +15,15 @@ export interface IUser {
     expiresAt: Date;
     status: boolean;
   };
-  isDeleted: boolean
+  isDeleted: boolean,
+  company: ICompany | null,
+  patient : IPatient | null,
+  staf : IStaf | null
 }
 
-export interface ICompany extends IUser {
-  title: string,
-  full_name: string,
+export interface ICompany {
+  // title: string,
+  // full_name: string,
   organization_name: string,
   site_short_name: string,
   legal_organization_name: string,
@@ -37,7 +40,7 @@ export interface ICompany extends IUser {
   cfr_part2: boolean
 }
 
-export interface IStaf extends IUser {
+export interface IStaf {
   name_title: string,
   f_name: string,
   middle_name?: string,
@@ -51,6 +54,7 @@ export interface IStaf extends IUser {
   zip_code: string,
   street: string,
   phone: string,
+
   staf_role: string,
   services: string[],
   hired_date: Date,
@@ -71,12 +75,15 @@ export interface IStaf extends IUser {
   provider_npi?: string,
   provider_licence_number?: string,
   dea_number?: string,
+
   work_schedule: { day: string, start_time: string, end_time: string }[],
   offDays: { reason: string, start_date: Date, endDate: Date, isRepeat: boolean, repeatType: string }[],
+
+  staf_company: Types.ObjectId
 }
 
 
-export interface IPatient extends IUser {
+export interface IPatient {
   name_title: string,
   f_name: string,
   middle_name?: string,
@@ -106,19 +113,19 @@ export interface IPatient extends IUser {
     allowPhone: boolean,
     allowText: boolean,
     allowEmail: boolean
-  },
-
+  }
 }
 
-  // contact: {
-  //   name_title: string,
-  //   full_name: string,
-  //   relation: string,
-  //   country: string,
-  //   state: string,
-  //   zip_code: string,
-  //   street: string,
-  //   phones: string[],
-  //   emails : string[]
-  // }
-
+// contact: {
+//   name_title: string,
+//   full_name: string,
+//   relation: string,
+//   country: string,
+//   state: string,
+//   zip_code: string,
+//   street: string,
+//   phones: string[],
+//   emails : string[]
+// }
+export interface IIStaf extends IUser, IStaf{}
+export interface IICompany extends IUser, ICompany{}

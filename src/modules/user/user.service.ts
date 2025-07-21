@@ -1,12 +1,12 @@
 import QueryBuilder from "../../builder/QueryBuilder";
 import AppError from "../../error/AppError";
-import { IUser } from "./user.interface";
-import { User } from "./user.models";
+import { IIStaf, IUser } from "./user.interface";
+import { Staf, User } from "./user.models";
 import httpStatus from 'http-status'
-
+import bcrypt from 'bcrypt'
 
 const updateProfile = async (payload: IUser, userId: string, image: string) => {
-    const {  name } = payload
+    const { name } = payload
 
     const updateFields: Partial<IUser> = { name };
 
@@ -61,9 +61,53 @@ const status_update_user = async (payload: { status: boolean }, id: string) => {
 }
 
 
+// add new staff
+const add_new_staff = async (payload: IIStaf, image : string, company_id: string) => {
+    const {
+        email,
+        password = '',
+        f_name = "",
+        middle_name = "",
+        last_name = "",
+    } = payload;
+
+    const name = f_name + middle_name + last_name
+
+    let isExist = await User.findOne({ email })
+
+    //check user is exist or not
+    if (isExist && isExist?.isverified) {
+        throw new AppError(
+            httpStatus.FORBIDDEN,
+            'Another account found with this email',
+        );
+    }
+
+    // creat encrypted password
+    const hashedPassword = await bcrypt.hash(password, 15);
+
+    const staff = await Staf.insertOne({ ...payload, staf_company: company_id });
+
+    const user = await User.findOneAndUpdate({ email }, {
+        name,
+        email,
+        password: hashedPassword,
+        role: "staf",
+        staf: staff?._id
+    }, { upsert: true, new: true })
+
+    if (!user) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Staff creation failed, try again');
+    }
+
+    return user;
+}
+
+
 export const userService = {
     updateProfile,
     getUserById,
     allUsers,
-    status_update_user
+    status_update_user,
+    add_new_staff
 }

@@ -10,6 +10,7 @@ import { User } from '../user/user.models';
 import { IUser } from '../user/user.interface';
 import { IOrder } from '../order/order.interface';
 import Order from '../order/order.model';
+import QueryBuilder from '../../builder/QueryBuilder';
 
 
 const stripe = new Stripe(config.stripe?.stripe_api_secret as string, {
@@ -139,12 +140,14 @@ const confirmPayment = async (query: Record<string, any>) => {
 };
 
 
-const getAllPayments = async () => {
-  const payments = await Payment.find();
-  if (!payments || payments.length === 0) {
-    throw new AppError(httpStatus.NOT_FOUND, 'No payments found');
-  }
-  return payments;
+const getAllPayments = async (query: Record<string, any>) => {
+  const paymentModel = new QueryBuilder(Payment.find({ isPaid: true }).populate("user"), query)
+    .paginate()
+    .sort();
+  const data: any = await paymentModel.modelQuery;
+  const meta = await paymentModel.countTotal();
+
+  return { data, meta }
 };
 
 const getPaymentsByUserId = async (
@@ -205,9 +208,6 @@ const deletePayments = async (id: string) => {
   return deletedPayment;
 };
 
-const generateInvoice = async (payload: any) => {
-};
-
 export const paymentsService = {
   // createPayments,
   getAllPayments,
@@ -217,5 +217,4 @@ export const paymentsService = {
   checkout,
   confirmPayment,
   getPaymentsByUserId,
-  generateInvoice,
 };

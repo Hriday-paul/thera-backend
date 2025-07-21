@@ -4,7 +4,7 @@ import auth from "../../middleware/auth";
 import { USER_ROLE } from "./user.constants";
 import parseData from "../../middleware/parseData";
 import { userController } from "./user.controller";
-import { statusUpdateValidator, } from "./user.validator";
+import { addStaffValidator, statusUpdateValidator, } from "./user.validator";
 import req_validator from "../../middleware/req_validation";
 import path from 'node:path';
 
@@ -60,8 +60,18 @@ router.patch(
 
 router.get(
     '/my-profile',
-    auth( USER_ROLE.admin, USER_ROLE.user),
+    auth(USER_ROLE.admin, USER_ROLE.user),
     userController.getMyProfile,
+);
+
+router.post(
+    '/add-staff',
+    auth(USER_ROLE.admin, USER_ROLE.user),
+    addStaffValidator,
+    req_validator(),
+    single_image_Upload,
+    parseData(),
+    userController.add_new_staff,
 );
 
 export const userRoutes = router;

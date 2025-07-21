@@ -1,11 +1,9 @@
 import { Request, RequestHandler, Response } from "express";
 import catchAsync from "../../utils/catchAsync";
 import { userService } from "./user.service";
-import { IUser } from "./user.interface";
+import { IIStaf, IUser } from "./user.interface";
 import sendResponse from "../../utils/sendResponse";
 import httpStatus from 'http-status'
-import { User } from "./user.models";
-import AppError from "../../error/AppError";
 import config from "../../config";
 
 //get all users
@@ -59,10 +57,33 @@ const update_user_status: RequestHandler<{ id: string }, {}, { status: boolean }
 })
 
 
+//create staff
+const add_new_staff = catchAsync(async (req: Request<{}, {}, IIStaf>, res: Response) => {
+
+    let image;
+
+    image = req.file?.filename && (config.BASE_URL + '/images/' + req.file.filename);
+
+    const result = await userService.add_new_staff(req.body, image || "", req?.user?._id);
+
+    // let otptoken;
+
+    // if (!result?.isverified) {
+    //     otptoken = await otpServices.resendOtp(result?.email);
+    // }
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'New Staff created successfully',
+        data: { user: result },
+    });
+})
+
 export const userController = {
     updateProfile,
     getMyProfile,
     update_user_status,
     all_users,
-
+    add_new_staff
 }

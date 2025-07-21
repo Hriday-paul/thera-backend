@@ -55,7 +55,7 @@ const getPaymentsByUserIdWithParams = catchAsync(async (req: Request, res: Respo
 });
 
 const getAllPayments = catchAsync(async (req: Request, res: Response) => {
-  const result = await paymentsService.getAllPayments(); // Assume this service method exists
+  const result = await paymentsService.getAllPayments(req.query); // Assume this service method exists
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,

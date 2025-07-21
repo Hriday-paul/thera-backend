@@ -2,12 +2,12 @@ import { Request, Response } from "express";
 import { authService } from "./auth.service"
 import sendResponse from "../../utils/sendResponse";
 import httpStatus from 'http-status'
-import { ICompany, IUser } from "../user/user.interface";
+import { IICompany } from "../user/user.interface";
 import { otpServices } from "../otp/otp.service";
 import catchAsync from "../../utils/catchAsync";
 
-//create user
-const createUser = catchAsync(async (req: Request<{}, {}, ICompany>, res: Response) => {
+//create company
+const createUser = catchAsync(async (req: Request<{}, {}, IICompany>, res: Response) => {
 
     const result = await authService.createUser(req.body);
 

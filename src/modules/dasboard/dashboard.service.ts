@@ -42,7 +42,7 @@ const userChart = async (query: Record<string, any>) => {
 }
 
 const earningChart = async (query: Record<string, any>) => {
-    const year = query.incomeYear ? query.incomeYear : moment().year();
+    const year = query.incomeYear ?? moment().year();
     const startOfYear = moment().year(year).startOf('year');
     const endOfYear = moment().year(year).endOf('year');
 

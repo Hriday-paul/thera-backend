@@ -1,8 +1,7 @@
-import { ICompany, IUser } from "../user/user.interface"
+import { IICompany, IUser } from "../user/user.interface"
 import AppError from "../../error/AppError"
 import httpStatus from 'http-status'
 import bcrypt from 'bcrypt'
-import { Organization, User } from "../user/user.models"
 import { createToken, verifyToken } from "./auth.utils"
 import config from "../../config"
 import path from 'path';
@@ -11,9 +10,11 @@ import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import { generateOtp } from "../../utils/otpGenerator"
 import moment from "moment"
 import { sendEmail } from "../../utils/mailSender"
+import { Company, User } from "../user/user.models"
 
 
-const createUser = async (payload: ICompany) => {
+const createUser = async (payload: IICompany) => {
+
     const { name, email, password = '', organization_name, site_short_name, legal_organization_name, business_type, company_type, tax_type, tax_id, organization_liscence, organization_npi = "", facility_npi = '', diagnostic_code, pregnancy_related_services = false, track_pqrs_measure = false, cfr_part2 = false } = payload
 
     let isExist = await User.findOne({ email })
@@ -29,11 +30,7 @@ const createUser = async (payload: ICompany) => {
     // creat encrypted password
     const hashedPassword = await bcrypt.hash(password, 15);
 
-    const user = await Organization.findOneAndUpdate({ email }, {
-        name,
-        email,
-        password: hashedPassword,
-        role: "company",
+    const company = await Company.insertOne({
         organization_name,
         site_short_name,
         legal_organization_name,
@@ -48,7 +45,15 @@ const createUser = async (payload: ICompany) => {
         pregnancy_related_services,
         track_pqrs_measure,
         cfr_part2
-    }, { upsert: true, new: true });
+    });
+
+    const user = await User.findOneAndUpdate({ email }, {
+        name,
+        email,
+        password: hashedPassword,
+        role: "company",
+        company: company?._id
+    }, { upsert: true, new: true })
 
     if (!user) {
         throw new AppError(httpStatus.BAD_REQUEST, 'Account creation failed');
