@@ -76,12 +76,11 @@ export interface IStaf {
   provider_licence_number?: string,
   dea_number?: string,
 
-  work_schedule: { day: string, start_time: string, end_time: string }[],
-  offDays: { reason: string, start_date: Date, endDate: Date, isRepeat: boolean, repeatType: string }[],
+  work_schedule: { day: string, willWork : boolean, times : Date[] }[],
+  offDays: { reason: string, dates : Date[], repeat: boolean, repeat_type: string }[],
 
   staf_company: Types.ObjectId
 }
-
 
 export interface IPatient {
   name_title: string,

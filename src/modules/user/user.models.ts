@@ -25,16 +25,16 @@ const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
 
 const workScheduleSchema = new Schema({
   day: { type: String, required: true },
-  start_time: { type: String, required: true },
-  end_time: { type: String, required: true },
+  willWork: { type: Boolean, required: true },
+  times: { type: [Date], required: true },
 }, { _id: false });
+
 
 const offDaySchema = new Schema({
   reason: { type: String, required: true },
-  start_date: { type: Date, required: true },
-  endDate: { type: Date, required: true },
-  isRepeat: { type: Boolean, default: false },
-  repeatType: { type: String, default: '' },
+  dates: [{ type: Date, required: true }],
+  repeat: { type: Boolean, default: false },
+  repeat_type: { type: String, default: '' },
 }, { _id: false });
 
 const staffSchema: Schema<IStaf> = new Schema<IStaf>({
