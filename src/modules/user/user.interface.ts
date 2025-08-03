@@ -16,9 +16,12 @@ export interface IUser {
     status: boolean;
   };
   isDeleted: boolean,
+  isDisable: boolean,
   company: ICompany | null,
-  patient : IPatient | null,
-  staf : IStaf | null
+  patient: IPatient | null,
+  staf: IStaf | null,
+  staf_company_id: Types.ObjectId | null,
+  patient_company_id: Types.ObjectId | null,
 }
 
 export interface ICompany {
@@ -76,10 +79,8 @@ export interface IStaf {
   provider_licence_number?: string,
   dea_number?: string,
 
-  work_schedule: { day: string, willWork : boolean, times : Date[] }[],
-  offDays: { reason: string, dates : Date[], repeat: boolean, repeat_type: string }[],
-
-  staf_company: Types.ObjectId
+  work_schedule: { day: string, willWork: boolean, times: Date[] }[],
+  offDays: { reason: string, dates: Date[], repeat: boolean, repeat_type: string }[],
 }
 
 export interface IPatient {
@@ -106,25 +107,92 @@ export interface IPatient {
   employer: string,
   employer_email: string,
   employer_phone: string,
-  assign_staf: Types.ObjectId[],
+  assign_stafs: Types.ObjectId[],
   contactPreferences: {
     mentionAgency: boolean,
     allowPhone: boolean,
     allowText: boolean,
     allowEmail: boolean
-  }
+  },
+
+  contacts: IContact[],
+
+
+  legal_date?: Date;
+  livingWill?: string;
+  advanceDirectives?: string;
+  hasDPOA?: string;
+  dpoaName?: string;
+  dpoaOnFile?: string;
+  dpoaAddress?: string;
+  dpoaPhone?: string;
+  proxyName?: string;
+  proxyAddress?: string;
+  proxyEmail?: string;
+  proxyPhone?: string;
+  clinicName?: string;
+  primaryPhysician?: string;
+  physicianAddress?: string;
+  physicianPhone?: string;
+  visitDate?: Date;
+  chronicIllnesses?: string;
+  medications?: string;
+  healthCareProviders?: string;
+  medicalDiagnoses?: string;
+  date?: Date;
+  residenceType?: string;
+  familyType?: string;
+  residenceOwnership?: string;
+  householdSize?: string;
+  livingWith?: string;
+  supportServices1?: string[];
+  housingNotes?: string;
+  lightHousekeeping?: string;
+  heavyHousekeeping?: string;
+  generalShopping?: string;
+  ownShopping?: string;
+  drives?: string;
+  prepareMeal?: string;
+  manageMoney?: string;
+  useTelephone?: string;
+  bathing?: string;
+  toiletUse?: string;
+  adlShopping?: string;
+
+  family_income: number;
+  family_income_type: string;
+  payment_amount: number;
+  hasInsurance: string
+  insurances : InsuranceType[]
 }
 
-// contact: {
-//   name_title: string,
-//   full_name: string,
-//   relation: string,
-//   country: string,
-//   state: string,
-//   zip_code: string,
-//   street: string,
-//   phones: string[],
-//   emails : string[]
-// }
-export interface IIStaf extends IUser, IStaf{}
-export interface IICompany extends IUser, ICompany{}
+export interface InsuranceType {
+  insurance_provider: string;
+  plan_type: string;
+  therapy_type: string,
+  policy_number: string,
+  approved_session: number,
+  sessionFrequency: string,
+  group_number: string,
+  copayment: number,
+  pocket_maximum_amount: number,
+  from_date: Date,
+  to_date: Date,
+  referral_number: string,
+};
+
+export interface IContact {
+  name_title: string,
+  full_name: string,
+  relation: string,
+  country: string,
+  state: string,
+  zip_code: string,
+  street: string,
+  email: string,
+  phone: string,
+}
+
+export interface IIStaf extends IUser, IStaf { }
+export interface IIPatient extends IUser, IPatient { }
+export interface IICompany extends IUser, ICompany { }

@@ -16,3 +16,16 @@ export const addStaffValidator = [
         .notEmpty().withMessage('password is required')
         .isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ]
+
+export const addPatientValidator = [
+    check('email')
+        .notEmpty().withMessage('email is required')
+        .isEmail()
+        .normalizeEmail({ all_lowercase: true })
+        .withMessage('Invalid email format'),
+
+
+    check('password')
+        .notEmpty().withMessage('password is required')
+        .isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+]

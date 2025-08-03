@@ -4,7 +4,7 @@ import auth from "../../middleware/auth";
 import { USER_ROLE } from "./user.constants";
 import parseData from "../../middleware/parseData";
 import { userController } from "./user.controller";
-import { addStaffValidator, statusUpdateValidator, } from "./user.validator";
+import { addPatientValidator, addStaffValidator, statusUpdateValidator, } from "./user.validator";
 import req_validator from "../../middleware/req_validation";
 import path from 'node:path';
 
@@ -65,13 +65,27 @@ router.get(
 );
 
 router.post(
-    '/add-staff',
-    auth(USER_ROLE.admin, USER_ROLE.user),
-    addStaffValidator,
-    req_validator(),
+    '/staffs',
     single_image_Upload,
     parseData(),
+    addStaffValidator,
+    req_validator(),
+    auth(USER_ROLE.company),
     userController.add_new_staff,
+);
+
+router.post(
+    '/patients',
+    addPatientValidator,
+    req_validator(),
+    auth(USER_ROLE.company),
+    userController.add_new_Patient,
+);
+
+router.get(
+    '/staffs',
+    auth(USER_ROLE.company),
+    userController.staffs,
 );
 
 export const userRoutes = router;

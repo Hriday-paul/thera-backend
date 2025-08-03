@@ -1,7 +1,7 @@
 import { Request, RequestHandler, Response } from "express";
 import catchAsync from "../../utils/catchAsync";
 import { userService } from "./user.service";
-import { IIStaf, IUser } from "./user.interface";
+import { IIPatient, IIStaf, IUser } from "./user.interface";
 import sendResponse from "../../utils/sendResponse";
 import httpStatus from 'http-status'
 import config from "../../config";
@@ -45,6 +45,7 @@ const getMyProfile = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+
 // status update user
 const update_user_status: RequestHandler<{ id: string }, {}, { status: boolean }> = catchAsync(async (req, res) => {
     const result = await userService.status_update_user(req.body, req.params.id)
@@ -80,10 +81,48 @@ const add_new_staff = catchAsync(async (req: Request<{}, {}, IIStaf>, res: Respo
     });
 })
 
+//get my staffs;
+const staffs = catchAsync(async (req: Request, res: Response) => {
+    const result = await userService.staffs(req?.user?._id);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'my staffs fetched successfully',
+        data: result,
+    });
+});
+
+
+
+//create patient
+const add_new_Patient = catchAsync(async (req: Request<{}, {}, IIPatient>, res: Response) => {
+
+    // let image;
+
+    // image = req.file?.filename && (config.BASE_URL + '/images/' + req.file.filename);
+
+    const result = await userService.add_new_Patient(req.body, req?.user?._id);
+
+    // let otptoken;
+
+    // if (!result?.isverified) {
+    //     otptoken = await otpServices.resendOtp(result?.email);
+    // }
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'New Patient created successfully',
+        data: { user: result },
+    });
+})
+
 export const userController = {
     updateProfile,
     getMyProfile,
     update_user_status,
     all_users,
-    add_new_staff
+    add_new_staff,
+    staffs,
+    add_new_Patient
 }

@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { ICompany, IPatient, IStaf, IUser } from './user.interface';
+import { ICompany, IContact, InsuranceType, IPatient, IStaf, IUser } from './user.interface';
 
 const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
   {
@@ -21,7 +21,6 @@ const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
     cfr_part2: { type: Boolean, default: false },
   }
 );
-
 
 const workScheduleSchema = new Schema({
   day: { type: String, required: true },
@@ -73,9 +72,35 @@ const staffSchema: Schema<IStaf> = new Schema<IStaf>({
   dea_number: { type: String },
   work_schedule: { type: [workScheduleSchema], default: [] },
   offDays: { type: [offDaySchema], default: [] },
-  staf_company: { type: Schema.Types.ObjectId, required: true, ref: "users" }
+  
 });
 
+
+const contactSchema: Schema<IContact> = new Schema<IContact>({
+  name_title: { type: String, required: true },
+  full_name: { type: String, required: true },
+  country: { type: String, required: true },
+  state: { type: String, required: true },
+  zip_code: { type: String, required: true },
+  street: { type: String, required: true },
+  phone: { type: String, required: true },
+  email: { type: String, required: true },
+});
+
+const insuranceSchema: Schema<InsuranceType> = new Schema<InsuranceType>({
+  insurance_provider: { type: String },
+  plan_type: { Type: String },
+  therapy_type: { type: String },
+  policy_number: { type: String },
+  approved_session: { type: Number, default : 0 },
+  sessionFrequency: { type: String },
+  group_number: { type: String },
+  copayment: { type: Number, default : 0 },
+  pocket_maximum_amount: { type: Number, default : 0 },
+  from_date: { type: Date },
+  to_date: { type: Date },
+  referral_number: { Type: String },
+});
 
 const patientSchema: Schema<IPatient> = new Schema<IPatient>(
   {
@@ -102,7 +127,57 @@ const patientSchema: Schema<IPatient> = new Schema<IPatient>(
     employer: { type: String, required: true },
     employer_email: { type: String, required: true },
     employer_phone: { type: String, required: true },
-    assign_staf: [{ type: Schema.Types.ObjectId, ref: 'users' }],
+    assign_stafs: [{ type: Schema.Types.ObjectId, ref: 'users' }],
+
+    contacts: { type: [contactSchema], default: [] },
+
+    legal_date: { type: Date },
+    livingWill: { type: String },
+    advanceDirectives: { type: String },
+    hasDPOA: { type: String },
+    dpoaName: { type: String },
+    dpoaOnFile: { type: String },
+    dpoaAddress: { type: String },
+    dpoaPhone: { type: String },
+    proxyName: { type: String },
+    proxyAddress: { type: String },
+    proxyEmail: { type: String },
+    proxyPhone: { type: String },
+    clinicName: { type: String },
+    primaryPhysician: { type: String },
+    physicianAddress: { type: String },
+    physicianPhone: { type: String },
+    visitDate: { type: Date },
+    chronicIllnesses: { type: String },
+    medications: { type: String },
+    healthCareProviders: { type: String },
+    medicalDiagnoses: { type: String },
+    date: { type: Date },
+    residenceType: { type: String },
+    familyType: { type: String },
+    residenceOwnership: { type: String },
+    householdSize: { type: String },
+    livingWith: { type: String },
+    supportServices1: { type: [String], default: [] },
+    housingNotes: { type: String },
+    lightHousekeeping: { type: String },
+    heavyHousekeeping: { type: String },
+    generalShopping: { type: String },
+    ownShopping: { type: String },
+    drives: { type: String },
+    prepareMeal: { type: String },
+    manageMoney: { type: String },
+    useTelephone: { type: String },
+    bathing: { type: String },
+    toiletUse: { type: String },
+    adlShopping: { type: String },
+
+    family_income: { type: Number, default : 0 },
+    family_income_type: { type: String },
+    payment_amount: { type: Number, default : 0 },
+    // contactPreferences: { type: String },
+    hasInsurance: { type: String },
+    insurances: { type: [insuranceSchema], default: [] }
   }
 );
 
@@ -150,6 +225,10 @@ const userSchema: Schema<IUser> = new Schema(
       type: Boolean,
       default: false,
     },
+    isDisable: {
+      type: Boolean,
+      default: false,
+    },
     verification: {
       otp: {
         type: Schema.Types.Mixed,
@@ -165,7 +244,8 @@ const userSchema: Schema<IUser> = new Schema(
     },
     company: { type: Schema.Types.ObjectId, ref: "companies", default: null },
     patient: { type: Schema.Types.ObjectId, ref: "patients", default: null },
-    staf: { type: Schema.Types.ObjectId, ref: "stafs", default: null }
+    staf: { type: Schema.Types.ObjectId, ref: "stafs", default: null },
+    staf_company_id : { type: Schema.Types.ObjectId, ref: "companies", default: null },
   },
   {
     timestamps: true,

@@ -10,6 +10,7 @@ import { settingsRoutes } from './modules/settings/settings.rout';
 import { productRoutes } from './modules/products/products.route';
 import { orderRoutes } from './modules/order/order.route';
 import { paymentsRoutes } from './modules/payments/payments.route';
+import { CaseFileRouts } from './modules/case_files/case_files.route';
 
 
 const router = express.Router();
@@ -54,7 +55,12 @@ const moduleRoutes = [
     {
         path: '/payments',
         route: paymentsRoutes,
-    }
+    },
+    {
+        path: '/case-files',
+        route: CaseFileRouts,
+    },
+
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));
 
