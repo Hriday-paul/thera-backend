@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { ICompany, IContact, InsuranceType, IPatient, IStaf, IUser } from './user.interface';
+import { ICompany, IContact, IFamilyGroup, InsuranceType, IPatient, IPerson, IStaf, IUser } from './user.interface';
 
 const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
   {
@@ -72,7 +72,7 @@ const staffSchema: Schema<IStaf> = new Schema<IStaf>({
   dea_number: { type: String },
   work_schedule: { type: [workScheduleSchema], default: [] },
   offDays: { type: [offDaySchema], default: [] },
-  
+
 });
 
 
@@ -85,6 +85,7 @@ const contactSchema: Schema<IContact> = new Schema<IContact>({
   street: { type: String, required: true },
   phone: { type: String, required: true },
   email: { type: String, required: true },
+  relation : { type: String, required: true },
 });
 
 const insuranceSchema: Schema<InsuranceType> = new Schema<InsuranceType>({
@@ -92,14 +93,24 @@ const insuranceSchema: Schema<InsuranceType> = new Schema<InsuranceType>({
   plan_type: { Type: String },
   therapy_type: { type: String },
   policy_number: { type: String },
-  approved_session: { type: Number, default : 0 },
+  approved_session: { type: Number, default: 0 },
   sessionFrequency: { type: String },
   group_number: { type: String },
-  copayment: { type: Number, default : 0 },
-  pocket_maximum_amount: { type: Number, default : 0 },
+  copayment: { type: Number, default: 0 },
+  pocket_maximum_amount: { type: Number, default: 0 },
   from_date: { type: Date },
   to_date: { type: Date },
   referral_number: { Type: String },
+});
+
+const PersonSchema: Schema<IPerson> = new Schema({
+  name: { type: String, required: true },
+  relation: { type: String, required: true },
+});
+
+const FamilyGroupSchema: Schema<IFamilyGroup> = new Schema({
+  name: { type: String, required: true },
+  persons: { type: [PersonSchema], required: true },
 });
 
 const patientSchema: Schema<IPatient> = new Schema<IPatient>(
@@ -130,6 +141,8 @@ const patientSchema: Schema<IPatient> = new Schema<IPatient>(
     assign_stafs: [{ type: Schema.Types.ObjectId, ref: 'users' }],
 
     contacts: { type: [contactSchema], default: [] },
+
+    familyGroup: { type: FamilyGroupSchema, default: null },
 
     legal_date: { type: Date },
     livingWill: { type: String },
@@ -172,9 +185,9 @@ const patientSchema: Schema<IPatient> = new Schema<IPatient>(
     toiletUse: { type: String },
     adlShopping: { type: String },
 
-    family_income: { type: Number, default : 0 },
+    family_income: { type: Number, default: 0 },
     family_income_type: { type: String },
-    payment_amount: { type: Number, default : 0 },
+    payment_amount: { type: Number, default: 0 },
     // contactPreferences: { type: String },
     hasInsurance: { type: String },
     insurances: { type: [insuranceSchema], default: [] }
@@ -245,7 +258,7 @@ const userSchema: Schema<IUser> = new Schema(
     company: { type: Schema.Types.ObjectId, ref: "companies", default: null },
     patient: { type: Schema.Types.ObjectId, ref: "patients", default: null },
     staf: { type: Schema.Types.ObjectId, ref: "stafs", default: null },
-    staf_company_id : { type: Schema.Types.ObjectId, ref: "companies", default: null },
+    staf_company_id: { type: Schema.Types.ObjectId, ref: "companies", default: null },
   },
   {
     timestamps: true,

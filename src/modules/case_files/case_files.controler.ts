@@ -16,7 +16,7 @@ const createcaseFile = catchAsync(async (req: Request, res: Response) => {
 
 const CaseFilesByPatient = catchAsync(async (req: Request, res: Response) => {
 
-    const result = await CaseFileService.CaseFilesByPatient(req.params.id);
+    const result = await CaseFileService.CaseFilesByPatient(req.params.id, req.query);
 
     sendResponse(res, {
         statusCode: 200,
@@ -26,7 +26,20 @@ const CaseFilesByPatient = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const updateCaseFileStatus = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await CaseFileService.updateCaseFileStatus(req.params.id, req.body.status);
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: 'Case file status updated successfully',
+        data: result,
+    });
+});
+
 export const caseFileControler = {
     createcaseFile,
-    CaseFilesByPatient
+    CaseFilesByPatient,
+    updateCaseFileStatus
 }

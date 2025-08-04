@@ -105,7 +105,7 @@ const add_new_staff = async (payload: IIStaf, image: string, company_id: string)
     return user;
 }
 
-// all staffs
+// all staffs by company
 const staffs = async (company_id: string) => {
     const res = await User.find({ role: "staf", staf_company_id: company_id }).populate("staf");
     return res;

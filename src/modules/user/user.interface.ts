@@ -83,6 +83,16 @@ export interface IStaf {
   offDays: { reason: string, dates: Date[], repeat: boolean, repeat_type: string }[],
 }
 
+export interface IPerson {
+  name: string;
+  relation: string;
+}
+
+export interface IFamilyGroup {
+  name: string;
+  persons: IPerson[];
+}
+
 export interface IPatient {
   name_title: string,
   f_name: string,
@@ -116,6 +126,8 @@ export interface IPatient {
   },
 
   contacts: IContact[],
+
+  familyGroup : IFamilyGroup
 
 
   legal_date?: Date;

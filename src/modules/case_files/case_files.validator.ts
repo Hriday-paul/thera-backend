@@ -15,3 +15,7 @@ export const createCaseFileValidator = [
         .isMongoId()
         .withMessage('Each staff ID must be a valid ID'),
 ]
+
+export const statusUpdateCaseFileValidator = [
+    check('status').trim().not().isEmpty().withMessage('status is required').isBoolean().withMessage("Invalid status"),
+]

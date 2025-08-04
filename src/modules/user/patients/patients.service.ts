@@ -1,0 +1,231 @@
+import { Types } from "mongoose";
+import AppError from "../../../error/AppError";
+import { IContact, IFamilyGroup } from "../user.interface";
+import { Patient, User } from "../user.models"
+import httpStatus from "http-status"
+
+const patientprofile = async (patientId: string) => {
+    const res = await User.findOne({ _id: patientId, role: "patient" }).select("-password").populate({
+        path: "patient",
+        populate: {
+            path: "assign_stafs",
+            select: "-password"
+        }
+    });
+    return res;
+}
+
+const addFamilyGroup = async (userId: string, payload: IFamilyGroup) => {
+
+    const { name, persons } = payload;
+
+    const exist = await User.findOne({ _id: userId, role: "patient" }).select("-password");
+
+    if (!exist) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Patient not found',
+        );
+    }
+
+    const patientId = exist?.patient;
+
+    const res = await Patient.updateOne({ _id: patientId }, { familyGroup: { name, persons } })
+
+    return res;
+}
+
+const addNewPersonToFamily = async (userId: string, payload: { name: string, relation: string }) => {
+
+    const exist = await User.findOne({ _id: userId, role: "patient" }).select("-password");
+
+    if (!exist) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Patient not found',
+        );
+    }
+
+    const patientId = exist?.patient;
+
+    const res = await Patient.updateOne(
+        { _id: patientId },
+        {
+            $push: {
+                'familyGroup.persons': payload
+            }
+        }
+    );
+
+    return res;
+}
+
+const updatePersonInFamily = async (
+    userId: string,
+    personId: string,
+    payload: { name: string; relation: string }
+) => {
+    const exist = await User.findOne({ _id: userId, role: "patient" }).select("-password");
+
+    if (!exist) {
+        throw new AppError(httpStatus.NOT_FOUND, "Patient not found");
+    }
+
+    const patientId = exist.patient;
+
+    const res = await Patient.updateOne(
+        {
+            _id: patientId,
+            "familyGroup.persons._id": personId, // match the person by id
+        },
+        {
+            $set: {
+                "familyGroup.persons.$.name": payload.name,
+                "familyGroup.persons.$.relation": payload.relation,
+            },
+        }
+    );
+
+    return res;
+};
+
+const deletePersonFromFamily = async (userId: string, personId: string) => {
+    const exist = await User.findOne({ _id: userId, role: "patient" }).select("-password");
+
+    if (!exist) {
+        throw new AppError(httpStatus.NOT_FOUND, "Patient not found");
+    }
+
+    const patientId = exist.patient;
+
+    const res = await Patient.updateOne(
+        { _id: patientId },
+        {
+            $pull: {
+                "familyGroup.persons": { _id: personId },
+            },
+        }
+    );
+
+    return res;
+};
+
+
+const addEmergencyPerson = async (userId: string, payload: IContact) => {
+
+    const exist = await User.findOne({ _id: userId, role: "patient" }).select("-password");
+
+    if (!exist) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Patient not found',
+        );
+    }
+
+    const patientId = exist?.patient;
+
+    const res = await Patient.updateOne(
+        { _id: patientId },
+        {
+            $push: {
+                'contacts': payload
+            }
+        }
+    );
+
+    return res;
+}
+
+const updateEmergencyContact = async (
+    userId: string,
+    contactId: string,
+    payload: IContact
+) => {
+    const exist = await User.findOne({ _id: userId, role: "patient" }).select("-password");
+
+    if (!exist) {
+        throw new AppError(httpStatus.NOT_FOUND, "Patient not found");
+    }
+
+    const patientId = exist.patient;
+
+    const res = await Patient.updateOne(
+        {
+            _id: patientId,
+            "contacts._id": contactId, // match the person by id
+        },
+        {
+            $set: {
+                "contacts.$.name_title": payload.name_title,
+                "contacts.$.full_name": payload.full_name,
+                "contacts.$.relation": payload.relation,
+                "contacts.$.country": payload.country,
+                "contacts.$.state": payload.state,
+                "contacts.$.zip_code": payload.zip_code,
+                "contacts.$.street": payload.street,
+                "contacts.$.email": payload.email,
+                "contacts.$.phone": payload.phone,
+            },
+        }
+    );
+
+    return res;
+};
+
+
+const deleteEmergencyPerson = async (userId: string, personId: string) => {
+
+    const exist = await User.findOne({ _id: userId, role: "patient" }).select("-password");
+
+    if (!exist) {
+        throw new AppError(httpStatus.NOT_FOUND, "Patient not found");
+    }
+
+    const patientId = exist.patient;
+
+    const res = await Patient.updateOne(
+        { _id: patientId },
+        {
+            $pull: {
+                "contacts": { _id: personId },
+            },
+        }
+    );
+
+    return res;
+};
+
+const deleteAsignStaffs = async (userId: string, staffId: string) => {
+
+    const exist = await User.findOne({ _id: userId, role: "patient" }).select("-password");
+
+    if (!exist) {
+        throw new AppError(httpStatus.NOT_FOUND, "Patient not found");
+    }
+
+    const patientId = exist.patient;
+
+    const res = await Patient.updateOne(
+        { _id: patientId },
+        {
+            $pull: {
+                assign_stafs: new Types.ObjectId(staffId)
+            }
+        }
+    );
+
+    return res;
+};
+
+export const PatientService = {
+    patientprofile,
+    addFamilyGroup,
+    addNewPersonToFamily,
+    updatePersonInFamily,
+    deletePersonFromFamily,
+
+    addEmergencyPerson,
+    updateEmergencyContact,
+    deleteEmergencyPerson,
+    deleteAsignStaffs
+}
