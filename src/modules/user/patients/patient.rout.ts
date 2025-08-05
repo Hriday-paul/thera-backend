@@ -5,6 +5,7 @@ import { userController } from "../user.controller";
 import { addPatientEmergencyPersonValidator, addPatientfamilyGroupValidator, addPatientValidator, familyGroupPersonAddValidator, familyGroupPersoUpdateValidator, PersonDeleteFamilyValidator, updatePatientEmergencyPersonValidator } from "../user.validator";
 import req_validator from "../../../middleware/req_validation";
 import { PatientController } from "./patient.controler";
+import { deleteInsuranceValidator, editInsuranceValidator, editPatientBillingValidator, insuranceValidator } from "./patient.validator";
 
 const router = Router();
 
@@ -71,10 +72,12 @@ router.delete(
     PatientController.deleteEmergencyPerson,
 );
 
-router.get(
-    '/assign-staffs',
+router.post(
+    '/assign-staffs/:id',
+    PersonDeleteFamilyValidator,
+    req_validator(),
     auth(USER_ROLE.company),
-    userController.add_new_Patient,
+    PatientController.assignNewStaffToPatient,
 );
 
 router.delete(
@@ -89,6 +92,37 @@ router.get(
     '/profile/:id',
     auth(USER_ROLE.company),
     PatientController.patientprofile,
+);
+
+router.put(
+    '/billing-details/:id',
+    editPatientBillingValidator,
+    req_validator(),
+    auth(USER_ROLE.company),
+    PatientController.editBillingDetails,
+);
+
+
+router.post(
+    '/insurance/:id',
+    insuranceValidator,
+    req_validator(),
+    auth(USER_ROLE.company),
+    PatientController.addInsurance,
+);
+router.put(
+    '/insurance/:id',
+    editInsuranceValidator,
+    req_validator(),
+    auth(USER_ROLE.company),
+    PatientController.editInsurance,
+);
+router.delete(
+    '/insurance/:id',
+    deleteInsuranceValidator,
+    req_validator(),
+    auth(USER_ROLE.company),
+    PatientController.deleteInsurance,
 );
 
 export const PatientRouts = router;

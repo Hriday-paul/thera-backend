@@ -15,13 +15,14 @@ export interface IUser {
     expiresAt: Date;
     status: boolean;
   };
+  isOnline : boolean,
   isDeleted: boolean,
   isDisable: boolean,
   company: ICompany | null,
   patient: IPatient | null,
   staf: IStaf | null,
-  staf_company_id: Types.ObjectId | null,
-  patient_company_id: Types.ObjectId | null,
+  staf_company_id: Types.ObjectId,
+  patient_company_id: Types.ObjectId,
 }
 
 export interface ICompany {
@@ -93,6 +94,15 @@ export interface IFamilyGroup {
   persons: IPerson[];
 }
 
+export interface IBilling {
+  email: string;
+  phone: string;
+  country: string,
+  state: string,
+  zip_code: string,
+  street: string,
+}
+
 export interface IPatient {
   name_title: string,
   f_name: string,
@@ -127,7 +137,9 @@ export interface IPatient {
 
   contacts: IContact[],
 
-  familyGroup : IFamilyGroup
+  familyGroup : IFamilyGroup,
+
+  billing_details : IBilling | null
 
 
   legal_date?: Date;

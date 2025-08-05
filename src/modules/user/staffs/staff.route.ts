@@ -6,6 +6,7 @@ import parseData from "../../../middleware/parseData";
 import { addStaffValidator } from "../user.validator";
 import req_validator from "../../../middleware/req_validation";
 import { image_Upload } from "../../../utils/FileUpload";
+import { StaffsController } from "./staff.controller";
 
 const router = Router();
 
@@ -13,6 +14,12 @@ router.get(
     '/',
     auth(USER_ROLE.company),
     userController.staffs,
+);
+
+router.get(
+    '/list',
+    auth(USER_ROLE.company),
+    StaffsController.staffList,
 );
 
 

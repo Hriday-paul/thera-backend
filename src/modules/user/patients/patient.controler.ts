@@ -105,6 +105,61 @@ const deleteAsignStaffs = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+//assign new staff to patient
+const assignNewStaffToPatient = catchAsync(async (req: Request, res: Response) => {
+    const result = await PatientService.assignNewStaffToPatient(req?.params?.id, req.body?.person);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'New staff assigned to a patient',
+        data: result,
+    });
+});
+
+//assign new staff to patient
+const editBillingDetails = catchAsync(async (req: Request, res: Response) => {
+    const result = await PatientService.editBillingDetails(req?.params?.id, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Billing details updated to patient',
+        data: result,
+    });
+});
+
+//add new insurance to patient
+const addInsurance = catchAsync(async (req: Request, res: Response) => {
+    const result = await PatientService.addInsurance(req?.params?.id, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'New Insurance added to a patient',
+        data: result,
+    });
+});
+
+//edit insurance to patient
+const editInsurance = catchAsync(async (req: Request, res: Response) => {
+    const result = await PatientService.editInsurance(req?.params?.id, req.body?.insurance, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Insurance updated to this patient',
+        data: result,
+    });
+});
+
+//delete insurances
+const deleteInsurance = catchAsync(async (req: Request, res: Response) => {
+    const result = await PatientService.deleteInsurance(req?.params?.id, req.body?.insurance);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Insurance deleted successfully to this patient',
+        data: result,
+    });
+});
+
 export const PatientController = {
     patientprofile,
     addFamilyGroup,
@@ -114,5 +169,11 @@ export const PatientController = {
     addEmergencyPerson,
     updateEmergencyPerson,
     deleteEmergencyPerson,
-    deleteAsignStaffs
+    deleteAsignStaffs,
+    assignNewStaffToPatient,
+
+    editBillingDetails,
+    addInsurance,
+    editInsurance,
+    deleteInsurance
 }

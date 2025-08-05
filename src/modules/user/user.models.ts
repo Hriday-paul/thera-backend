@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { ICompany, IContact, IFamilyGroup, InsuranceType, IPatient, IPerson, IStaf, IUser } from './user.interface';
+import { IBilling, ICompany, IContact, IFamilyGroup, InsuranceType, IPatient, IPerson, IStaf, IUser } from './user.interface';
 
 const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
   {
@@ -85,7 +85,7 @@ const contactSchema: Schema<IContact> = new Schema<IContact>({
   street: { type: String, required: true },
   phone: { type: String, required: true },
   email: { type: String, required: true },
-  relation : { type: String, required: true },
+  relation: { type: String, required: true },
 });
 
 const insuranceSchema: Schema<InsuranceType> = new Schema<InsuranceType>({
@@ -111,6 +111,15 @@ const PersonSchema: Schema<IPerson> = new Schema({
 const FamilyGroupSchema: Schema<IFamilyGroup> = new Schema({
   name: { type: String, required: true },
   persons: { type: [PersonSchema], required: true },
+});
+
+const BillingSchema: Schema<IBilling> = new Schema({
+  email: { type: String, required: true },
+  phone: { type: String },
+  country: { type: String },
+  state: { type: String },
+  zip_code: { type: String },
+  street: { type: String },
 });
 
 const patientSchema: Schema<IPatient> = new Schema<IPatient>(
@@ -143,6 +152,8 @@ const patientSchema: Schema<IPatient> = new Schema<IPatient>(
     contacts: { type: [contactSchema], default: [] },
 
     familyGroup: { type: FamilyGroupSchema, default: null },
+
+    billing_details: { type: BillingSchema, default: null },
 
     legal_date: { type: Date },
     livingWill: { type: String },
@@ -234,6 +245,10 @@ const userSchema: Schema<IUser> = new Schema(
       type: Number,
       default: 1,
     },
+    isOnline: {
+      type: Boolean,
+      default: false,
+    },
     isDeleted: {
       type: Boolean,
       default: false,
@@ -258,7 +273,7 @@ const userSchema: Schema<IUser> = new Schema(
     company: { type: Schema.Types.ObjectId, ref: "companies", default: null },
     patient: { type: Schema.Types.ObjectId, ref: "patients", default: null },
     staf: { type: Schema.Types.ObjectId, ref: "stafs", default: null },
-    staf_company_id: { type: Schema.Types.ObjectId, ref: "companies", default: null },
+    staf_company_id: { type: Schema.Types.ObjectId, ref: "users", default: null },
   },
   {
     timestamps: true,

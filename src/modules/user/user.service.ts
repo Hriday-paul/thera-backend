@@ -136,7 +136,7 @@ const add_new_Patient = async (payload: IIPatient, company_id: string) => {
     // creat encrypted password
     const hashedPassword = await bcrypt.hash(password, 15);
 
-    const patient = await Patient.insertOne({ ...payload });
+    const patient = await Patient.insertOne({ ...payload, billing_details: { email: payload?.email, phone: payload?.phone, country: payload?.country, state: payload?.state, zip_code: payload?.zip_code, street: payload?.street } });
 
     const user = await User.findOneAndUpdate({ email }, {
         name,
@@ -144,7 +144,7 @@ const add_new_Patient = async (payload: IIPatient, company_id: string) => {
         password: hashedPassword,
         role: "patient",
         patient: patient?._id,
-        patient_company_id : company_id
+        patient_company_id: company_id
     }, { upsert: true, new: true })
 
     if (!user) {

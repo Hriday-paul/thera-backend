@@ -17,6 +17,8 @@ router.post(
 
 router.get("/by-patient/:id", auth(USER_ROLE.company), caseFileControler.CaseFilesByPatient);
 
+router.get("/stats/:id", auth(USER_ROLE.company), caseFileControler.CaseFileStats);
+
 router.patch("/status/:id", statusUpdateCaseFileValidator, req_validator(), auth(USER_ROLE.company), caseFileControler.updateCaseFileStatus);
 
 export const CaseFileRouts = router;

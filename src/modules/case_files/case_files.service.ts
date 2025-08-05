@@ -38,8 +38,22 @@ const updateCaseFileStatus = async (id: string, status: boolean) => {
     return res;
 };
 
+const CaseFileStats = async (patient: string) => {
+
+    const total = await CaseFiles.countDocuments({ patient, isDeleted: false });
+    const opened = await CaseFiles.countDocuments({ patient, isDeleted: false, isClosed: false });
+    const closed = await CaseFiles.countDocuments({ patient, isDeleted: false, isClosed: true });
+
+    return {
+        total,
+        opened,
+        closed
+    };
+};
+
 export const CaseFileService = {
     createcaseFile,
     CaseFilesByPatient,
-    updateCaseFileStatus
+    updateCaseFileStatus,
+    CaseFileStats
 }

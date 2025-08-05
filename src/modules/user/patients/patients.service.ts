@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import AppError from "../../../error/AppError";
-import { IContact, IFamilyGroup } from "../user.interface";
+import { IBilling, IContact, IFamilyGroup, InsuranceType } from "../user.interface";
 import { Patient, User } from "../user.models"
 import httpStatus from "http-status"
 
@@ -217,6 +217,159 @@ const deleteAsignStaffs = async (userId: string, staffId: string) => {
     return res;
 };
 
+const assignNewStaffToPatient = async (userId: string, staffId: string) => {
+    const exist = await User.findOne({ _id: userId, role: "patient" }).select("-password");
+
+    if (!exist) {
+        throw new AppError(httpStatus.NOT_FOUND, "Patient not found");
+    }
+
+    const patientId = exist?.patient;
+
+    const patient = await Patient.findById(patientId);
+
+    if (!patient) {
+        throw new AppError(httpStatus.NOT_FOUND, "Patient record not found");
+    }
+
+    const staffObjectId = new Types.ObjectId(staffId);
+
+    // ✅ Check if staff already assigned
+    const isAlreadyAssigned = patient.assign_stafs.some(
+        (s: Types.ObjectId) => s.equals(staffObjectId)
+    );
+
+    if (isAlreadyAssigned) {
+        throw new AppError(httpStatus.CONFLICT, "Staff is already assigned to this patient");
+    }
+
+    // ✅ Assign the staff if not already present
+    const res = await Patient.updateOne(
+        { _id: patientId },
+        {
+            $push: {
+                assign_stafs: staffObjectId,
+            },
+        }
+    );
+
+    return res;
+};
+
+const editBillingDetails = async (
+    userId: string,
+    payload: IBilling
+) => {
+    const exist = await User.findOne({ _id: userId, role: "patient" }).select("-password");
+
+    if (!exist) {
+        throw new AppError(httpStatus.NOT_FOUND, "Patient not found");
+    }
+
+    const patientId = exist.patient;
+
+    const res = await Patient.updateOne(
+        {
+            _id: patientId,
+        },
+        {
+            $set: {
+                "billing_details": payload,
+            },
+        }
+    );
+
+    return res;
+};
+
+const addInsurance = async (userId: string, payload: InsuranceType) => {
+
+    const exist = await User.findOne({ _id: userId, role: "patient" }).select("-password");
+
+    if (!exist) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Patient not found',
+        );
+    }
+
+    const patientId = exist?.patient;
+
+    const res = await Patient.updateOne(
+        { _id: patientId },
+        {
+            $push: {
+                'insurances': payload
+            }
+        }
+    );
+
+    return res;
+}
+
+const editInsurance = async (userId: string, insuranceId: string, payload: InsuranceType) => {
+
+    const {policy_number = "", approved_session = 0, sessionFrequency = null, therapy_type = null, group_number = "", copayment = 0, pocket_maximum_amount = 0, referral_number = "", plan_type = null} = payload
+
+    const exist = await User.findOne({ _id: userId, role: "patient" }).select("-password");
+
+    if (!exist) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Patient not found',
+        );
+    }
+
+    const patientId = exist?.patient;
+
+    const res = await Patient.updateOne(
+        {
+            _id: patientId,
+            "insurances._id": insuranceId, // match the person by id
+        },
+        {
+            $set: {
+                "insurances.$.insurance_provider": payload.insurance_provider,
+                "insurances.$.plan_type": plan_type,
+                "insurances.$.policy_number": policy_number,
+                "insurances.$.approved_session": approved_session,
+                "insurances.$.sessionFrequency": sessionFrequency,
+                "insurances.$.group_number": group_number,
+                "insurances.$.copayment": copayment,
+                "insurances.$.pocket_maximum_amount": pocket_maximum_amount,
+                "insurances.$.from_date": payload.from_date,
+                "insurances.$.to_date": payload.to_date,
+                "insurances.$.referral_number": referral_number,
+                "insurances.$.therapy_type": therapy_type,
+            },
+        }
+    );
+
+    return res;
+}
+
+const deleteInsurance = async (userId: string, insurancId: string) => {
+
+    const exist = await User.findOne({ _id: userId, role: "patient" }).select("-password");
+
+    if (!exist) {
+        throw new AppError(httpStatus.NOT_FOUND, "Patient not found");
+    }
+
+    const patientId = exist.patient;
+
+    const res = await Patient.updateOne(
+        { _id: patientId },
+        {
+            $pull: {
+                "insurances": { _id: insurancId },
+            },
+        }
+    );
+
+    return res;
+};
+
 export const PatientService = {
     patientprofile,
     addFamilyGroup,
@@ -227,5 +380,10 @@ export const PatientService = {
     addEmergencyPerson,
     updateEmergencyContact,
     deleteEmergencyPerson,
-    deleteAsignStaffs
+    deleteAsignStaffs,
+    assignNewStaffToPatient,
+    editBillingDetails,
+    addInsurance,
+    editInsurance,
+    deleteInsurance
 }

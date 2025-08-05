@@ -38,8 +38,21 @@ const updateCaseFileStatus = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const CaseFileStats = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await CaseFileService.CaseFileStats(req.params.id);
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: 'Case file status retrived successfully',
+        data: result,
+    });
+});
+
 export const caseFileControler = {
     createcaseFile,
     CaseFilesByPatient,
-    updateCaseFileStatus
+    updateCaseFileStatus,
+    CaseFileStats
 }
