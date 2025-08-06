@@ -11,9 +11,6 @@ import { PatientRouts } from "./patients/patient.rout";
 
 const router = Router();
 
-
-
-
 const moduleRouts = [
     {
         path: '/staffs',
@@ -44,7 +41,7 @@ router.patch(
     '/status/:id',
     statusUpdateValidator,
     req_validator(),
-    auth(USER_ROLE.admin),
+    auth(USER_ROLE.admin, USER_ROLE.company),
     userController.update_user_status,
 );
 

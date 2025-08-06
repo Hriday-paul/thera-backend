@@ -33,4 +33,20 @@ router.post(
     userController.add_new_staff,
 );
 
+router.put(
+    '/',
+    image_Upload.single('image'),
+    parseData(),
+    // addStaffValidator,
+    // req_validator(),
+    auth(USER_ROLE.company),
+    StaffsController.updateStaff,
+);
+
+router.get(
+    '/:id',
+    auth(USER_ROLE.company, USER_ROLE.staf),
+    StaffsController.staffprofile,
+);
+
 export const StaffRouts = router;

@@ -1,5 +1,9 @@
 import multer from "multer";
 import path from "path";
+import AppError from "../error/AppError";
+import httpStatus from "http-status"
+import fs from "fs";
+
 
 export const file_upload_config = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -25,3 +29,33 @@ export const image_Upload = multer({
         }
     },
 });
+
+export const UploadBase64_to_File = (image: string) => {
+
+    if (!image) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'No valid field found',
+        );
+    }
+
+    // Extract mime type and base64 data
+    const matches = image.match(/^data:(image\/\w+);base64,(.+)$/);
+
+    if (!matches) {
+        throw new AppError(
+            httpStatus.FORBIDDEN,
+            'Invalid base64 image format.',
+        );
+    }
+
+    const mimeType = matches[1]; // e.g., image/png
+    const base64Data = matches[2];
+    const extension = mimeType.split("/")[1]; // e.g., png, jpeg
+    const filename = `${Date.now()}.${extension}`;
+    const savePath = path.join(__dirname, "public", "images", filename);
+
+    const buffer = Buffer.from(base64Data, "base64");
+    fs.writeFileSync(savePath, buffer);
+    return filename;
+}

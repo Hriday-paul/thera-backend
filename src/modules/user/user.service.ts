@@ -55,6 +55,16 @@ const getUserById = async (id: string) => {
 //user status update
 const status_update_user = async (payload: { status: boolean }, id: string) => {
 
+    let isExist = await User.findOne({ _id: id });
+
+    //check user is exist or not
+    if (!isExist) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Account not found',
+        );
+    }
+
     const result = await User.updateOne({ _id: id }, { status: payload?.status })
 
     return result
