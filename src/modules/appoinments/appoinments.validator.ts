@@ -1,0 +1,53 @@
+import { check } from "express-validator";
+
+export const createAppointmentValidate = [
+    check("title")
+        .notEmpty().withMessage("Title is required.")
+        .isString().withMessage("Title must be a string."),
+
+    check("appoinment_type")
+        .isIn(["group", "individual"]).withMessage("Appointment type must be 'group' or 'individual'."),
+
+    check("note")
+        .optional()
+        .isString().withMessage("Note must be a string."),
+
+    check("location")
+        .notEmpty().withMessage("Location is required.")
+        .isString().withMessage("Location must be a string."),
+
+    check("start_date")
+        .notEmpty().withMessage("Start date is required.")
+        .isISO8601().toDate().withMessage("Start date must be a valid ISO date."),
+
+    // check("times")
+    //     .isArray({ min: 2 }).withMessage("Times must be a non-empty array.")
+    //     .custom((times) => {
+    //         return times.every((time: any) => !isNaN(Date.parse(time)));
+    //     }).withMessage("Each time must be a valid date string."),
+
+    check('times')
+        .isArray({ min: 2 })
+        .withMessage('Time must be 2 times'),
+
+    check('times.*')
+        .isISO8601().toDate()
+        .withMessage("Each time must be a valid date string."),
+
+    check("repeat_type")
+        .isIn(["none", "daily", "weekly", "monthly", "yearly"]).withMessage("Invalid repeat type."),
+
+    check("repeat_count")
+        .optional()
+        .isInt({ min: 0 }).withMessage("Repeat count must be a non-negative integer."),
+
+    check("staff_ids")
+        .isArray({ min: 1 }).withMessage("Staff IDs must be a non-empty array."),
+
+    check('staff_ids.*')
+        .isMongoId()
+        .withMessage("Each staff ID must be a valid ObjectId."),
+
+    check("patient_id")
+        .isMongoId().withMessage("Patient ID must be a valid ObjectId."),
+];

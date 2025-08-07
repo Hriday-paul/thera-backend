@@ -1,0 +1,54 @@
+
+import mongoose, { model } from "mongoose";
+import { IAppoinment, IOccurrencce, IStaffUnavilibility } from "./appoinments.interface";
+
+const appointmentSchema = new mongoose.Schema<IAppoinment>({
+    title: { type: String },
+    appoinment_type: { type: String, enum: ["group", "individual"], default: "individual" },
+    note: String,
+    location: { type: String },
+    start_date: { type: Date },
+    times: { type: [Date] },
+    repeat_type: {
+        type: String,
+        enum: ["none", "daily", "weekly", "monthly", "yearly"],
+        default: "none"
+    },
+    repeat_count: { type: Number, default : 0 },
+    staff_ids: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }],
+    patient_id: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
+    company_id: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
+});
+
+
+
+const appointmentOccurrenceSchema = new mongoose.Schema<IOccurrencce>({
+    appointment: { type: mongoose.Schema.Types.ObjectId, ref: "Appointments" },
+    start_datetime: { type: Date },
+    end_datetime: { type: Date },
+    staff_ids: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }],
+    status: {
+        type: String,
+        enum: ["upcoming", "completed", "cancelled"],
+        default: "upcoming"
+    }
+});
+
+
+
+
+const staffUnavailabilitySchema = new mongoose.Schema<IStaffUnavilibility>({
+    staff_id: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
+    occurrence_id: { type: mongoose.Schema.Types.ObjectId, ref: "AppointmentOccurrences" },
+    reason: { type: String },
+});
+
+
+
+export const Appointment = model<IAppoinment>("Appointments", appointmentSchema);
+
+export const AppointmentOccurrence = mongoose.model<IOccurrencce>("AppointmentOccurrences", appointmentOccurrenceSchema);
+
+export const StaffUnavailability = mongoose.model<IStaffUnavilibility>("StaffUnavailabilities", staffUnavailabilitySchema);
+
+

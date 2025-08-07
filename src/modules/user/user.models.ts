@@ -40,7 +40,7 @@ const staffSchema: Schema<IStaf> = new Schema<IStaf>({
   name_title: { type: String, required: true },
   f_name: { type: String, required: true },
   middle_name: { type: String },
-  last_name: { type: String, required: true },
+  last_name: { type: String },
   preferred_name: { type: String },
   gender: { type: String, required: true },
   sexual_orientation: { type: String },

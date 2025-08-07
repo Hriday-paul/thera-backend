@@ -34,7 +34,7 @@ router.post(
 );
 
 router.put(
-    '/',
+    '/:id',
     image_Upload.single('image'),
     parseData(),
     // addStaffValidator,

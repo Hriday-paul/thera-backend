@@ -3,6 +3,7 @@ import catchAsync from "../../../utils/catchAsync";
 import { StaffService } from "./staff.service";
 import sendResponse from "../../../utils/sendResponse";
 import httpStatus from "http-status"
+import config from "../../../config";
 
 //staffList
 const staffList = catchAsync(async (req: Request, res: Response) => {
@@ -26,6 +27,13 @@ const staffprofile = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateStaff = catchAsync(async (req: Request, res: Response) => {
+
+    let image;
+
+    image = req.file?.filename && (config.BASE_URL + '/images/' + req.file.filename);
+
+    req.body.image = image;
+
     const result = await StaffService.updateStaff(req?.params?.id, req.body);
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -38,5 +46,5 @@ const updateStaff = catchAsync(async (req: Request, res: Response) => {
 export const StaffsController = {
     staffList,
     staffprofile,
-    updateStaff
+    updateStaff,
 }

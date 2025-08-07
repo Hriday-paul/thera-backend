@@ -41,7 +41,7 @@ const StaffProfile = async (staffId: string) => {
 
 const updateStaff = async (staffId: string, payload: IIStaf) => {
 
-    const user = await User.findByIdAndUpdate({ _id: staffId }, { name: payload?.f_name + " " + payload?.middle_name + " " + payload?.last_name }, { new: true })
+    const user = await User.findByIdAndUpdate({ _id: staffId }, { name: payload?.f_name + " " + payload?.middle_name + " " + payload?.last_name, image: payload?.image ?? undefined }, { new: true })
 
     //check StaffProfile is exist or not
     if (!user) {
@@ -58,7 +58,9 @@ const updateStaff = async (staffId: string, payload: IIStaf) => {
         );
     }
 
-    const updatedStaff = await Staf.updateOne({ _id: user?.staf }, payload);
+    const {_id, ...clonePayload} = payload
+
+    const updatedStaff = await Staf.updateOne({ _id: user?.staf }, clonePayload);
 
     return updatedStaff;
 
