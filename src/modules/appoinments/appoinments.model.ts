@@ -9,6 +9,7 @@ const appointmentSchema = new mongoose.Schema<IAppoinment>({
     location: { type: String },
     start_date: { type: Date },
     times: { type: [Date] },
+    isRepeat : {type : Boolean, default : false},
     repeat_type: {
         type: String,
         enum: ["none", "daily", "weekly", "monthly", "yearly"],

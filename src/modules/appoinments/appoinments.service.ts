@@ -6,6 +6,7 @@ import moment from "moment";
 import { IAppoinment, IOccurrencce, IStaffUnavilibility } from "./appoinments.interface";
 import { Appointment, AppointmentOccurrence, StaffUnavailability } from "./appoinments.model";
 import httpStatus from "http-status";
+import { Types } from "mongoose";
 
 
 const generateOccurrences = async (appointment: IAppoinment): Promise<IOccurrencce[]> => {
@@ -99,7 +100,11 @@ const markStaffUnavailable = async (payload: IStaffUnavilibility) => {
 };
 
 
-const getFreeStaff = async (date: Date, time: Date) => {
+const getFreeStaff = async (req_date: string, time: string, companyId: string) => {
+
+  const date = new Date(req_date);
+  const timeDate = new Date(time);
+
   const weekday = date.toLocaleString('en-US', { weekday: 'long' });
 
   interface ISStaff extends IUser {
@@ -107,20 +112,114 @@ const getFreeStaff = async (date: Date, time: Date) => {
   }
 
   // Step 1: Get all staff who are scheduled to work on that day
-  const availableUsers = await User.find({
-    role: "staf",
-    work_schedule: {
-      $elemMatch: {
-        day: weekday,
-        willWork: true,
-        times: time, // or use $in to check presence
+
+  const availableUsers = await User.aggregate([
+    {
+      $match: {
+        role: "staf",
+        staf_company_id: new Types.ObjectId(companyId)
+      }
+    },
+    {
+      $lookup: {
+        from: "stafs",
+        localField: "staf",
+        foreignField: "_id",
+        as: "staf"
+      }
+    },
+    { $unwind: "$staf" },
+    {
+      $project: {
+        name: 1,
+        email: 1,
+        image: 1,
+        "staf.work_schedule": 1,
+        "staf.offDays": 1,
+        "staf._id": 1,
+        "staf.f_name": 1,
+        "staf.middle_name": 1,
+        "staf.last_name": 1
+      }
+    },
+    {
+      $match: {
+        $expr: {
+          $gt: [
+            {
+              $size: {
+                $filter: {
+                  input: "$staf.work_schedule",
+                  as: "ws",
+                  cond: {
+                    $and: [
+                      { $eq: ["$$ws.day", weekday] },
+                      { $eq: ["$$ws.willWork", true] },
+                      {
+                        $let: {
+                          vars: {
+                            startTime: { $arrayElemAt: ["$$ws.times", 0] },
+                            endTime: { $arrayElemAt: ["$$ws.times", 1] },
+                            inputTime: timeDate
+                          },
+                          in: {
+                            $and: [
+                              {
+                                $lte: [
+                                  {
+                                    $add: [
+                                      { $multiply: [{ $hour: "$$startTime" }, 3600] },
+                                      { $multiply: [{ $minute: "$$startTime" }, 60] },
+                                      { $second: "$$startTime" }
+                                    ]
+                                  },
+                                  {
+                                    $add: [
+                                      { $multiply: [{ $hour: "$$inputTime" }, 3600] },
+                                      { $multiply: [{ $minute: "$$inputTime" }, 60] },
+                                      { $second: "$$inputTime" }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                $gte: [
+                                  {
+                                    $add: [
+                                      { $multiply: [{ $hour: "$$endTime" }, 3600] },
+                                      { $multiply: [{ $minute: "$$endTime" }, 60] },
+                                      { $second: "$$endTime" }
+                                    ]
+                                  },
+                                  {
+                                    $add: [
+                                      { $multiply: [{ $hour: "$$inputTime" }, 3600] },
+                                      { $multiply: [{ $minute: "$$inputTime" }, 60] },
+                                      { $second: "$$inputTime" }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            0
+          ]
+        }
       }
     }
-  }).populate("staf") as ISStaff[];
+  ]) as ISStaff[];
 
   const finalFreeStaff = [];
 
   for (const user of availableUsers) {
+
     const isOff = user?.staf.offDays.some(off => {
       if (off.dates.some(d => isSameDay(d, date))) return true;
 
@@ -133,20 +232,19 @@ const getFreeStaff = async (date: Date, time: Date) => {
 
     if (isOff) continue;
 
-    // Step 3: Check if staff is already booked
     const hasConflict = await AppointmentOccurrence.exists({
-      staff: user._id,
-      date,
-      time,
-      status: { $ne: 'cancelled' }, // only consider active
-    });
+      staff_ids: { $in: [user._id] },
+      start_datetime: { $lte: timeDate },
+      end_datetime: { $gte: timeDate },
+      status: { $ne: 'cancelled' }
+    })
 
     if (!hasConflict) {
       finalFreeStaff.push(user);
     }
   }
 
-  return finalFreeStaff;
+  return availableUsers;
 };
 
 
@@ -262,5 +360,6 @@ export const appoinmentsService = {
   cancelOccurrence,
   getFreeStaff,
   allAppointmentsWithStaffStatus,
-  updateAppointment
+  updateAppointment,
+  markStaffUnavailable
 }

@@ -7,6 +7,8 @@ import { addStaffValidator } from "../user.validator";
 import req_validator from "../../../middleware/req_validation";
 import { image_Upload } from "../../../utils/FileUpload";
 import { StaffsController } from "./staff.controller";
+import { appoinmentControler } from "../../appoinments/appoinments.controler";
+import { getfreestaffValidator } from "./staff.validator";
 
 const router = Router();
 
@@ -20,6 +22,14 @@ router.get(
     '/list',
     auth(USER_ROLE.company),
     StaffsController.staffList,
+);
+
+router.get(
+    '/free',
+    getfreestaffValidator,
+    req_validator(),
+    auth(USER_ROLE.company),
+    appoinmentControler.getFreeStaff,
 );
 
 

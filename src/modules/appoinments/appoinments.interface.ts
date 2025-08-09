@@ -9,6 +9,7 @@ export interface IAppoinment {
     location: string,
     start_date: Date,
     times: Date[],
+    isRepeat : boolean,
     repeat_type: "none" | "daily" | "weekly" | "monthly" | "yearly",
     repeat_count : number,
     staff_ids : ObjectId[],
