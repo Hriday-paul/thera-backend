@@ -39,6 +39,8 @@ app.use(notFound);
 app.use(globalErrorHandler);
 
 
-app.listen(port, () => {
-  console.log(`[server]: Server is running at ${config.ip + ":" + port}`);
-});
+// app.listen(port, () => {
+//   console.log(`[server]: Server is running at ${config.ip + ":" + port}`);
+// });
+
+export default app;

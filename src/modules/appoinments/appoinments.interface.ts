@@ -6,7 +6,6 @@ export interface IAppoinment {
     title: string,
     appoinment_type: "group" | "individual",
     note: string,
-    location: string,
     start_date: Date,
     times: Date[],
     isRepeat : boolean,
@@ -22,6 +21,11 @@ export interface IOccurrencce{
     start_datetime : Date,
     end_datetime : Date,
     staff_ids : ObjectId[],
+    patient_id : ObjectId,
+    location : {
+        isOnline : boolean,
+        address : string
+    }
     status : "upcoming" | "completed" | "cancelled"
 }
 

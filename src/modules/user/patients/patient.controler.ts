@@ -15,6 +15,28 @@ const patientprofile = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+//all patients
+const allPatientsByCompany = catchAsync(async (req: Request, res: Response) => {
+    const result = await PatientService.allPatientsByCompany(req?.user?._id);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'all patients retrived successfully',
+        data: result,
+    });
+});
+
+//all patients
+const patientsListsWithAppoinmentHistory = catchAsync(async (req: Request, res: Response) => {
+    const result = await PatientService.patientsListsWithAppoinmentHistory(req?.user?._id, req.query);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'all patients retrived successfully',
+        data: result,
+    });
+});
+
 //add patient family group
 const addFamilyGroup = catchAsync(async (req: Request, res: Response) => {
     const result = await PatientService.addFamilyGroup(req?.params?.id, req.body);
@@ -162,6 +184,8 @@ const deleteInsurance = catchAsync(async (req: Request, res: Response) => {
 
 export const PatientController = {
     patientprofile,
+    allPatientsByCompany,
+    patientsListsWithAppoinmentHistory,
     addFamilyGroup,
     addNewPersonToFamily,
     updatePersonInFamily,

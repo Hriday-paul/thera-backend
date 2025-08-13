@@ -3,6 +3,7 @@ import AppError from "../../../error/AppError";
 import { IBilling, IContact, IFamilyGroup, InsuranceType } from "../user.interface";
 import { Patient, User } from "../user.models"
 import httpStatus from "http-status"
+import { AppointmentOccurrence } from "../../appoinments/appoinments.model";
 
 const patientprofile = async (patientId: string) => {
     const res = await User.findOne({ _id: patientId, role: "patient" }).select("-password").populate({
@@ -14,6 +15,150 @@ const patientprofile = async (patientId: string) => {
     });
     return res;
 }
+
+const allPatientsByCompany = async (companyId: string) => {
+    const res = await User.find({ patient_company_id: new Types.ObjectId(companyId), role: "patient" }).select("-password").populate({
+        path: "patient",
+        populate: {
+            path: "assign_stafs",
+            select: "-password"
+        }
+    });
+    return res;
+}
+
+
+export const patientsListsWithAppoinmentHistory = async (companyId: string, query: Record<string, any>) => {
+    const page = query?.page || 1;
+    const limit = query.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const searchTerm = query?.searchTerm
+
+    const searchFilter = searchTerm
+        ? {
+            $or: [
+                { name: { $regex: searchTerm, $options: "i" } },
+                { email: { $regex: searchTerm, $options: "i" } },
+            ],
+        }
+        : {};
+
+
+    const now = new Date();
+
+    const res = await User.aggregate([
+        {
+            $match: {
+                role: "patient",
+                patient_company_id: new Types.ObjectId(companyId),
+                ...searchFilter
+            }
+        },
+        {
+            $lookup: {
+                from: "appointments",
+                localField: "_id",
+                foreignField: "patient_id",
+                as: "appointments"
+            }
+        },
+        { $unwind: { path: "$appointments", preserveNullAndEmptyArrays: true } },
+        {
+            $lookup: {
+                from: "appointmentoccurrences",
+                localField: "appointments._id",
+                foreignField: "appointment",
+                as: "occurrences"
+            }
+        },
+        { $unwind: { path: "$occurrences", preserveNullAndEmptyArrays: true } },
+
+        // Remove this $match:
+        // {
+        //   $match: {
+        //     "occurrences.status": { $ne: "cancelled" },
+        //     "occurrences.start_datetime": { $gt: now }
+        //   }
+        // },
+
+        {
+            $lookup: {
+                from: "patients",
+                localField: "patient",
+                foreignField: "_id",
+                as: "patient",
+                pipeline: [
+                    // Inside each appointment, lookup staff info
+                    {
+                        $lookup: {
+                            from: "users",         // assuming staffs are users
+                            localField: "assign_stafs",
+                            foreignField: "_id",
+                            as: "assign_stafs"
+                        }
+                    }
+                ]
+            }
+        },
+        { $unwind: { path: "$patient", preserveNullAndEmptyArrays: true } },
+
+        {
+            $group: {
+                _id: "$_id",
+                name: { $first: "$name" },
+                email: { $first: "$email" },
+                image: { $first: "$image" },
+                patient: { $first: "$patient" },
+                nextAppointmentDate: {
+                    $min: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $gt: ["$occurrences.start_datetime", now] },
+                                    { $ne: ["$occurrences.status", "cancelled"] }
+                                ]
+                            },
+                            "$occurrences.start_datetime",
+                            null
+                        ]
+                    }
+                },
+                totalCompletedAppointments: {
+                    $sum: {
+                        $cond: [{ $eq: ["$occurrences.status", "completed"] }, 1, 0]
+                    }
+                }
+            }
+        },
+        { $sort: { nextAppointmentDate: 1 } },
+        {
+            $project: {
+                name: 1,
+                email: 1,
+                image: 1,
+                patient: { assign_stafs: { name: 1, email: 1, image: 1 } },
+                nextAppointmentDate: 1,
+                totalCompletedAppointments: 1,
+            }
+        },
+        // Add pagination stages:
+        { $skip: skip },
+        { $limit: limit }
+    ]);
+
+    const total = await User?.countDocuments({ role: "patient", patient_company_id: companyId })
+
+    const meta = {
+        page,
+        limit,
+        total,
+        totalPage: Math.ceil(total / limit)
+    }
+
+    return { data: res, meta };
+}
+
 
 const addFamilyGroup = async (userId: string, payload: IFamilyGroup) => {
 
@@ -309,7 +454,7 @@ const addInsurance = async (userId: string, payload: InsuranceType) => {
 
 const editInsurance = async (userId: string, insuranceId: string, payload: InsuranceType) => {
 
-    const {policy_number = "", approved_session = 0, sessionFrequency = null, therapy_type = null, group_number = "", copayment = 0, pocket_maximum_amount = 0, referral_number = "", plan_type = null} = payload
+    const { policy_number = "", approved_session = 0, sessionFrequency = null, therapy_type = null, group_number = "", copayment = 0, pocket_maximum_amount = 0, referral_number = "", plan_type = null } = payload
 
     const exist = await User.findOne({ _id: userId, role: "patient" }).select("-password");
 
@@ -372,6 +517,7 @@ const deleteInsurance = async (userId: string, insurancId: string) => {
 
 export const PatientService = {
     patientprofile,
+    allPatientsByCompany,
     addFamilyGroup,
     addNewPersonToFamily,
     updatePersonInFamily,
@@ -385,5 +531,6 @@ export const PatientService = {
     editBillingDetails,
     addInsurance,
     editInsurance,
-    deleteInsurance
+    deleteInsurance,
+    patientsListsWithAppoinmentHistory
 }

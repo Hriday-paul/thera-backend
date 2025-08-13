@@ -9,12 +9,6 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
 
     const result = await appoinmentsService.createAppointment(req?.user?._id, req.body);
 
-    // let otptoken;
-
-    // if (!result?.isverified) {
-    //     otptoken = await otpServices.resendOtp(result?.email);
-    // }
-
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
@@ -50,7 +44,59 @@ const getFreeStaff: RequestHandler<
     });
 })
 
+const allAppointments_byCompany_WithStaffStatus = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await appoinmentsService.allAppointments_byCompany_WithStaffStatus(req?.user?._id);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Appoinments retrived successfully',
+        data: result,
+    });
+})
+
+const sendNotificationReminder = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await appoinmentsService.sendNotificationReminder(req?.body?.occurenceId, req?.user?._id);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Reminder sent successfully',
+        data: result,
+    });
+})
+
+const cancelOccurrence = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await appoinmentsService.cancelOccurrence(req?.body?.occurenceId);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Appoinment canceled successfully',
+        data: result,
+    });
+})
+
+const allAppoinments_By_patient = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await appoinmentsService.allAppoinments_By_patient(req?.params?.id, req?.query);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Appoinments retrived successfully',
+        data: result,
+    });
+})
+
 export const appoinmentControler = {
     createAppointment,
-    getFreeStaff
+    getFreeStaff,
+    allAppointments_byCompany_WithStaffStatus,
+    sendNotificationReminder,
+    cancelOccurrence,
+    allAppoinments_By_patient
 }

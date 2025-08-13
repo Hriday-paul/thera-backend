@@ -16,6 +16,7 @@ export interface IUser {
     status: boolean;
   };
   isOnline : boolean,
+  fcmToken?: string;
   isDeleted: boolean,
   isDisable: boolean,
   company: ICompany | null,
@@ -23,6 +24,18 @@ export interface IUser {
   staf: IStaf | null,
   staf_company_id: Types.ObjectId,
   patient_company_id: Types.ObjectId,
+}
+
+export interface IOrgLocation{
+  state: string,
+  city : string,
+  zip_code: string,
+  street: string,
+
+  email : string,
+  phone : string,
+  fax : string,
+  rooms : string[]
 }
 
 export interface ICompany {
@@ -41,7 +54,9 @@ export interface ICompany {
   diagnostic_code: string,
   pregnancy_related_services: boolean,
   track_pqrs_measure: boolean,
-  cfr_part2: boolean
+  cfr_part2: boolean,
+
+  locations : IOrgLocation[]
 }
 
 export interface IStaf {

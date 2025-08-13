@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "npx tsc",
-    "start": "node dist/index.js",
-    "dev": "nodemon src/index.ts",
+    "start": "node dist/server.js",
+    "dev": "nodemon src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -25,6 +25,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.19.2",
     "express-validator": "^7.2.1",
+    "firebase-admin": "^13.4.0",
     "helmet": "^8.0.0",
     "http-status": "^2.1.0",
     "i": "^0.3.7",
@@ -36,7 +37,8 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.10.0",
     "npm": "^11.1.0",
-    "otp-generator": "^4.0.1"
+    "otp-generator": "^4.0.1",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

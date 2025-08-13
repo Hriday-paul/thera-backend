@@ -8,6 +8,7 @@ import req_validator from "../../middleware/req_validation";
 import { StaffRouts } from "./staffs/staff.route";
 import { image_Upload } from "../../utils/FileUpload";
 import { PatientRouts } from "./patients/patient.rout";
+import { CompanyRouts } from "./company/company.rout";
 
 const router = Router();
 
@@ -19,6 +20,10 @@ const moduleRouts = [
     {
         path: '/patients',
         route: PatientRouts,
+    },
+    {
+        path: '/companies',
+        route: CompanyRouts,
     },
 ]
 

@@ -1,5 +1,16 @@
 import { Schema, model } from 'mongoose';
-import { IBilling, ICompany, IContact, IFamilyGroup, InsuranceType, IPatient, IPerson, IStaf, IUser } from './user.interface';
+import { IBilling, ICompany, IContact, IFamilyGroup, InsuranceType, IOrgLocation, IPatient, IPerson, IStaf, IUser } from './user.interface';
+
+const OrgLocationSchema = new Schema<IOrgLocation>({
+  state: { type: String },
+  street: { type: String },
+  city: { type: String },
+  zip_code: { type: String },
+  email: { type: String },
+  fax: { type: String },
+  phone: { type: String },
+  rooms: [{ type: String }]
+});
 
 const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
   {
@@ -19,6 +30,8 @@ const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
     pregnancy_related_services: { type: Boolean, default: false },
     track_pqrs_measure: { type: Boolean, default: false },
     cfr_part2: { type: Boolean, default: false },
+
+    locations: { type: [OrgLocationSchema] }
   }
 );
 
@@ -248,6 +261,10 @@ const userSchema: Schema<IUser> = new Schema(
     isOnline: {
       type: Boolean,
       default: false,
+    },
+    fcmToken: {
+      type: String,
+      required: false,
     },
     isDeleted: {
       type: Boolean,

@@ -13,8 +13,17 @@ export const createAppointmentValidate = [
         .isString().withMessage("Note must be a string."),
 
     check("location")
-        .notEmpty().withMessage("Location is required.")
-        .isString().withMessage("Location must be a string."),
+        .notEmpty().withMessage("Location is required."),
+
+    check('location.isOnline')
+        .notEmpty().withMessage("isOnline is required.")
+        .isBoolean()
+        .withMessage("isOnline should be boolean"),
+
+    check('location.address')
+        .notEmpty().withMessage("address is required.")
+        .isString()
+        .withMessage("address is required to location"),
 
     check("start_date")
         .notEmpty().withMessage("Start date is required.")
@@ -51,3 +60,9 @@ export const createAppointmentValidate = [
     check("patient_id")
         .isMongoId().withMessage("Patient ID must be a valid ObjectId."),
 ];
+
+export const AppointmentReminderValidate = [
+    check("occurenceId")
+        .notEmpty().withMessage("appoinment is required.")
+        .isMongoId().withMessage("Invalid appoinment"),
+]

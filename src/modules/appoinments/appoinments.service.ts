@@ -7,16 +7,26 @@ import { IAppoinment, IOccurrencce, IStaffUnavilibility } from "./appoinments.in
 import { Appointment, AppointmentOccurrence, StaffUnavailability } from "./appoinments.model";
 import httpStatus from "http-status";
 import { Types } from "mongoose";
+import { sendNotification } from "../notification/notification.utils";
+import { INotification } from "../notification/notification.inerface";
 
+interface IIApoinment extends IAppoinment {
+  location: {
+    isOnline: boolean,
+    address: string
+  }
+}
 
-const generateOccurrences = async (appointment: IAppoinment): Promise<IOccurrencce[]> => {
+const generateOccurrences = async (appointment: IIApoinment): Promise<IOccurrencce[]> => {
   const {
     _id: appointmentId,
     start_date,
     times,
+    location,
     repeat_type,
     repeat_count = 1,
     staff_ids,
+    patient_id,
   } = appointment;
 
   if (!start_date || !Array.isArray(times) || times.length !== 2) {
@@ -25,12 +35,25 @@ const generateOccurrences = async (appointment: IAppoinment): Promise<IOccurrenc
 
   const [startTime, endTime] = times;
 
+  // const baseStart = moment(start_date)
+  //   .hour(moment(startTime).hour())
+  //   .minute(moment(startTime).minute());
+  // const baseEnd = moment(start_date)
+  //   .hour(moment(endTime).hour())
+  //   .minute(moment(endTime).minute());
+
   const baseStart = moment(start_date)
     .hour(moment(startTime).hour())
-    .minute(moment(startTime).minute());
+    .minute(moment(startTime).minute())
+    .second(0)       // reset seconds
+    .millisecond(0); // reset milliseconds
+
   const baseEnd = moment(start_date)
     .hour(moment(endTime).hour())
-    .minute(moment(endTime).minute());
+    .minute(moment(endTime).minute())
+    .second(0)
+    .millisecond(0);
+
 
   const occurrences: IOccurrencce[] = [];
 
@@ -57,7 +80,7 @@ const generateOccurrences = async (appointment: IAppoinment): Promise<IOccurrenc
         break;
       case "none":
       default:
-        if (i > 0) continue;
+        if (i > 0) continue; // skips any repeat after the first
         break;
     }
 
@@ -66,7 +89,9 @@ const generateOccurrences = async (appointment: IAppoinment): Promise<IOccurrenc
       start_datetime: occurrenceStart.toDate(),
       end_datetime: occurrenceEnd.toDate(),
       staff_ids,
+      location,
       status: "upcoming",
+      patient_id
     });
   }
 
@@ -74,13 +99,14 @@ const generateOccurrences = async (appointment: IAppoinment): Promise<IOccurrenc
 };
 
 
-const createAppointment = async (companyId: string, payload: IAppoinment) => {
-  const appointment = await Appointment.create({ ...payload, company_id: companyId });
+const createAppointment = async (companyId: string, payload: IIApoinment) => {
+  const appoin = await Appointment.create({ ...payload, company_id: companyId });
 
-  const occurrences = await generateOccurrences(appointment);
+  const appointment = appoin.toObject();
 
-  console.log(occurrences)
-  // await AppointmentOccurrence.insertMany(occurrences);
+  const occurrences = await generateOccurrences({ ...appointment, location: payload?.location });
+
+  await AppointmentOccurrence.insertMany(occurrences);
 
   return appointment;
 };
@@ -104,6 +130,8 @@ const getFreeStaff = async (req_date: string, time: string, companyId: string) =
 
   const date = new Date(req_date);
   const timeDate = new Date(time);
+
+  // console.log(date, time)
 
   const weekday = date.toLocaleString('en-US', { weekday: 'long' });
 
@@ -233,7 +261,7 @@ const getFreeStaff = async (req_date: string, time: string, companyId: string) =
     if (isOff) continue;
 
     const hasConflict = await AppointmentOccurrence.exists({
-      staff_ids: { $in: [user._id] },
+      staff_ids: { $in: [new Types.ObjectId(user._id)] },
       start_datetime: { $lte: timeDate },
       end_datetime: { $gte: timeDate },
       status: { $ne: 'cancelled' }
@@ -242,24 +270,30 @@ const getFreeStaff = async (req_date: string, time: string, companyId: string) =
     if (!hasConflict) {
       finalFreeStaff.push(user);
     }
+
   }
 
-  return availableUsers;
+  return finalFreeStaff;
 };
 
 
 
-const allAppointmentsWithStaffStatus = async () => {
+const allAppointments_byCompany_WithStaffStatus = async (companyId: string) => {
   const result = await AppointmentOccurrence.aggregate([
     {
       $lookup: {
-        from: 'Appointments',
+        from: 'appointments',
         localField: 'appointment',
         foreignField: '_id',
         as: 'appointment'
       }
     },
     { $unwind: '$appointment' },
+    {
+      $match: {
+        'appointment.company_id': new Types.ObjectId(companyId)
+      }
+    },
     {
       $unwind: '$staff_ids'
     },
@@ -274,8 +308,8 @@ const allAppointmentsWithStaffStatus = async () => {
     { $unwind: '$staffInfo' },
     {
       $lookup: {
-        from: 'staffunavailabilities',
-        let: { staffId: '$users', occurrenceId: '$_id' },
+        from: 'staffUnavailabilities',
+        let: { staffId: '$staff_ids', occurrenceId: '$_id' },
         pipeline: [
           {
             $match: {
@@ -293,11 +327,11 @@ const allAppointmentsWithStaffStatus = async () => {
     },
     {
       $addFields: {
-        status: {
+        staffStatus: {
           $cond: [
             { $gt: [{ $size: '$unavailability' }, 0] },
-            'unavailable',
-            'joined'
+            'Unavailable',
+            'Attending'
           ]
         }
       }
@@ -305,16 +339,22 @@ const allAppointmentsWithStaffStatus = async () => {
     {
       $group: {
         _id: '$_id',
-        date: { $first: '$date' },
-        appointmentId: { $first: '$appointmentId' },
-        staffs: {
+        start: { $first: '$start_datetime' },
+        end: { $first: '$end_datetime' },
+        status: { $first: '$status' },
+        appointment: { $first: '$appointment' },
+        location: { $first: '$location' },
+        staff_ids: {
           $push: {
-            staffId: '$staffs',
+            _id: '$staff_ids',
             name: '$staffInfo.name',
-            status: '$status'
+            email: '$staffInfo.email',
+            image: '$staffInfo.image',
+            status: '$staffStatus'
           }
         }
       }
+
     },
     {
       $sort: { date: 1 }
@@ -325,8 +365,17 @@ const allAppointmentsWithStaffStatus = async () => {
 };
 
 
+const allAppoinments_By_patient = async (patient_id: string, query: Record<string, any>) => {
+  const status = query?.status;
+  const quer = status ? { status, patient_id } : { patient_id };
 
-const updateAppointment = async (id: string, payload: IAppoinment) => {
+  const appoinments = await AppointmentOccurrence.find(quer).populate("appointment").populate({path : "staff_ids", select : "-password -verification"}).populate({path : "patient_id", select : "-password -verification"});
+
+  return appoinments;
+}
+
+
+const updateAppointment = async (id: string, payload: IIApoinment) => {
   const appointment = await Appointment.findByIdAndUpdate(id, payload, { new: true });
 
   if (!appointment) {
@@ -348,18 +397,66 @@ const updateAppointment = async (id: string, payload: IAppoinment) => {
     _id: { $nin: completedIds }
   });
 
-  const newOccurrences = await generateOccurrences(appointment); // add await
+  const newOccurrences = await generateOccurrences({ ...appointment, location: payload?.location }); // add await
   await AppointmentOccurrence.insertMany(newOccurrences);
 
 
   return appointment;
 };
 
+interface IIOccurence extends Omit<IOccurrencce, "staff_ids"> {
+  staff_ids: IUser[]
+}
+
+const sendNotificationReminder = async (occurenceId: string, userId: string) => {
+
+  const occurenceDoc = await AppointmentOccurrence.findOne({ _id: occurenceId }).populate({
+    path: 'staff_ids',
+    select: "-password"
+  });
+
+  if (!occurenceDoc) {
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      'Appoinment not found',
+    );
+  }
+
+  const occurence = occurenceDoc as unknown as IIOccurence
+
+  const staffs = occurence?.staff_ids;
+
+  const fcmTokens: string[] = (staffs?.map(i => i?.fcmToken).filter(Boolean)) as string[] || [];
+
+  const notifications = (staffs?.map(i => {
+    if (i?.fcmToken) {
+      return {
+        title: `Appointment Reminder`,
+        message: `New appointment coming at ${moment(occurence.start_datetime).format('MMMM Do YYYY, h:mm:ss a')}`,
+        receiver: i._id,
+        receiverEmail: i.email,
+        receiverRole: i.role,
+        sender: new Types.ObjectId(userId)
+      } satisfies INotification;
+    }
+    return null;
+  }) ?? []).filter((n): n is NonNullable<typeof n> => n !== null);
+
+  if (fcmTokens?.length > 0) {
+    await sendNotification(fcmTokens, notifications, { title: `Appoinment Reminder`, message: `New appoinment coming at ${moment(occurence?.start_datetime).format('MMMM Do YYYY, h:mm:ss a')}` });
+  }
+
+  return null;
+
+}
+
 export const appoinmentsService = {
   createAppointment,
   cancelOccurrence,
   getFreeStaff,
-  allAppointmentsWithStaffStatus,
+  allAppointments_byCompany_WithStaffStatus,
   updateAppointment,
-  markStaffUnavailable
+  markStaffUnavailable,
+  sendNotificationReminder,
+  allAppoinments_By_patient
 }

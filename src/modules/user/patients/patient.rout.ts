@@ -17,6 +17,12 @@ router.post(
     userController.add_new_Patient,
 );
 
+router.get(
+    '/',
+    auth(USER_ROLE.company),
+    PatientController.patientsListsWithAppoinmentHistory,
+);
+
 router.patch(
     '/family-group/:id',
     addPatientfamilyGroupValidator,
