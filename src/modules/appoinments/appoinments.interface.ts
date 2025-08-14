@@ -26,7 +26,7 @@ export interface IOccurrencce{
         isOnline : boolean,
         address : string
     }
-    status : "upcoming" | "completed" | "cancelled"
+    status : "upcoming" | "completed" | "cancelled" | "no_show"
 }
 
 export interface IStaffUnavilibility{

@@ -83,7 +83,7 @@ const initializeSocketIO = (server: HttpServer) => {
 
           const receiverDetails: IUser | null = await User.findById(
             userId,
-          ).select('_id email role image');
+          ).select('_id email role image name');
 
           if (!receiverDetails) {
             callbackFn(callback, {
@@ -97,7 +97,7 @@ const initializeSocketIO = (server: HttpServer) => {
           }
           const payload = {
             _id: receiverDetails?._id,
-            full_name: receiverDetails?.name,
+            name: receiverDetails?.name,
             email: receiverDetails?.email,
             image: receiverDetails?.image,
             role: receiverDetails?.role,
@@ -110,7 +110,7 @@ const initializeSocketIO = (server: HttpServer) => {
               { sender: user?._id, receiver: userId },
               { sender: userId, receiver: user?._id },
             ],
-          }).sort({ updatedAt: 1 });
+          }).sort({ createdAt: 1 });
 
           socket.emit('message', getPreMessage || []);
 
@@ -144,6 +144,26 @@ const initializeSocketIO = (server: HttpServer) => {
       socket.on('my-chat-list', async (data, callback) => {
         try {
           const chatList = await chatService.getMyChatList(user?._id);
+          const myChat = 'chat-list::' + user?._id;
+
+          io.emit(myChat, chatList);
+
+          callbackFn(callback, { success: true, message: chatList });
+        } catch (error: any) {
+          callbackFn(callback, {
+            success: false,
+            message: error.message,
+          });
+          io.emit('io-error', { success: false, message: error.message });
+        }
+      });
+
+      //----------------------chat search------------------------//
+      socket.on('chat-list-search', async (data, callback) => {
+        try {
+          const { searchTerm } = data;
+
+          const chatList = await chatService.getMyChatList(user?._id, searchTerm);
           const myChat = 'chat-list::' + user?._id;
 
           io.emit(myChat, chatList);
@@ -233,14 +253,14 @@ const initializeSocketIO = (server: HttpServer) => {
           const variable2 = 'new-notifications::' + user2;
           io.emit(variable2, allUnReaddMessage2);
 
-          const getPreMessage = await Message.find({
-            $or: [
-              { sender: user1, receiver: user2 },
-              { sender: user2, receiver: user1 },
-            ],
-          }).sort({ updatedAt: 1 });
+          // const getPreMessage = await Message.find({
+          //   $or: [
+          //     { sender: user1, receiver: user2 },
+          //     { sender: user2, receiver: user1 },
+          //   ],
+          // }).sort({ updatedAt: 1 });
 
-          socket.emit('message', getPreMessage || []);
+          // socket.emit('message', getPreMessage || []);
 
           const user1Chat = 'chat-list::' + user1;
           const user2Chat = 'chat-list::' + user2;
@@ -311,9 +331,11 @@ const initializeSocketIO = (server: HttpServer) => {
           });
         }
 
-        const senderMessage = 'new-message::' + payload.receiver.toString();
+        const receiverMessage = 'new-message::' + payload.chat.toString();
+        // const senderMessage = 'new-message::' + user?._id.toString();
 
-        io.emit(senderMessage, result);
+        io.emit(receiverMessage, result);
+        // io.emit(senderMessage, result);
 
         // //----------------------ChatList------------------------//
         const ChatListSender = await chatService.getMyChatList(
@@ -426,7 +448,7 @@ const initializeSocketIO = (server: HttpServer) => {
 
         console.log('disconnect user ', socket.id);
       });
-      
+
     } catch (error) {
       console.error('-- socket.io connection error --', error);
       socket.emit('error', { message: "connection error" })

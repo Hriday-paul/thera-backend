@@ -6,6 +6,8 @@ import { addPatientEmergencyPersonValidator, addPatientfamilyGroupValidator, add
 import req_validator from "../../../middleware/req_validation";
 import { PatientController } from "./patient.controler";
 import { deleteInsuranceValidator, editInsuranceValidator, editPatientBillingValidator, insuranceValidator } from "./patient.validator";
+import { image_Upload } from "../../../utils/FileUpload";
+import parseData from "../../../middleware/parseData";
 
 const router = Router();
 
@@ -15,6 +17,16 @@ router.post(
     req_validator(),
     auth(USER_ROLE.company),
     userController.add_new_Patient,
+);
+
+router.put(
+    '/:id',
+    image_Upload.single('image'),
+    parseData(),
+    // addStaffValidator,
+    // req_validator(),
+    auth(USER_ROLE.company),
+    PatientController.updatePatient,
 );
 
 router.get(

@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import AppError from "../../../error/AppError";
-import { IBilling, IContact, IFamilyGroup, InsuranceType } from "../user.interface";
+import { IBilling, IContact, IFamilyGroup, IIPatient, InsuranceType } from "../user.interface";
 import { Patient, User } from "../user.models"
 import httpStatus from "http-status"
 import { AppointmentOccurrence } from "../../appoinments/appoinments.model";
@@ -25,6 +25,33 @@ const allPatientsByCompany = async (companyId: string) => {
         }
     });
     return res;
+}
+
+const updatePatient = async (patientId: string, payload: IIPatient) => {
+
+    const user = await User.findByIdAndUpdate({ _id: patientId }, { name: payload?.f_name + " " + payload?.middle_name + " " + payload?.last_name, image: payload?.image ?? undefined }, { new: true })
+
+    //check patient is exist or not
+    if (!user) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Staff not found',
+        );
+    }
+
+    if (!user?.patient) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Staff not found',
+        );
+    }
+
+    const {_id, ...clonePayload} = payload
+
+    const updatedStaff = await Patient.updateOne({ _id: user?.patient }, clonePayload);
+
+    return updatedStaff;
+
 }
 
 
@@ -517,6 +544,7 @@ const deleteInsurance = async (userId: string, insurancId: string) => {
 
 export const PatientService = {
     patientprofile,
+    updatePatient,
     allPatientsByCompany,
     addFamilyGroup,
     addNewPersonToFamily,

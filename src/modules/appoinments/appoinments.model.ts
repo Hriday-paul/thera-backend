@@ -34,7 +34,7 @@ const appointmentOccurrenceSchema = new mongoose.Schema<IOccurrencce>({
     location : {type : LocationSchema},
     status: {
         type: String,
-        enum: ["upcoming", "completed", "cancelled"],
+        enum: ["upcoming", "completed", "cancelled", "no_show"],
         default: "upcoming"
     }
 }, { timestamps: true });

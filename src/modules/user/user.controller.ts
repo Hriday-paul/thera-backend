@@ -97,11 +97,11 @@ const staffs = catchAsync(async (req: Request, res: Response) => {
 //create patient
 const add_new_Patient = catchAsync(async (req: Request<{}, {}, IIPatient>, res: Response) => {
 
-    // let image;
+    let image;
 
-    // image = req.file?.filename && (config.BASE_URL + '/images/' + req.file.filename);
+    image = req.file?.filename && (config.BASE_URL + '/images/' + req.file.filename);
 
-    const result = await userService.add_new_Patient(req.body, req?.user?._id);
+    const result = await userService.add_new_Patient(req.body, image || "", req?.user?._id);
 
     // let otptoken;
 

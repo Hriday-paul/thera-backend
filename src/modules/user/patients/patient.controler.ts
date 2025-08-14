@@ -3,6 +3,7 @@ import catchAsync from "../../../utils/catchAsync";
 import { PatientService } from "./patients.service";
 import sendResponse from "../../../utils/sendResponse";
 import httpStatus from "http-status"
+import config from "../../../config";
 
 //get my patient profile
 const patientprofile = catchAsync(async (req: Request, res: Response) => {
@@ -22,6 +23,23 @@ const allPatientsByCompany = catchAsync(async (req: Request, res: Response) => {
         statusCode: httpStatus.OK,
         success: true,
         message: 'all patients retrived successfully',
+        data: result,
+    });
+});
+
+const updatePatient = catchAsync(async (req: Request, res: Response) => {
+
+    let image;
+
+    image = req.file?.filename && (config.BASE_URL + '/images/' + req.file.filename);
+
+    req.body.image = image;
+
+    const result = await PatientService.updatePatient(req?.params?.id, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Patient profile updated successfully',
         data: result,
     });
 });
@@ -184,6 +202,7 @@ const deleteInsurance = catchAsync(async (req: Request, res: Response) => {
 
 export const PatientController = {
     patientprofile,
+    updatePatient,
     allPatientsByCompany,
     patientsListsWithAppoinmentHistory,
     addFamilyGroup,

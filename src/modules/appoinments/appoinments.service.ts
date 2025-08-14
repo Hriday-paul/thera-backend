@@ -6,7 +6,7 @@ import moment from "moment";
 import { IAppoinment, IOccurrencce, IStaffUnavilibility } from "./appoinments.interface";
 import { Appointment, AppointmentOccurrence, StaffUnavailability } from "./appoinments.model";
 import httpStatus from "http-status";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { sendNotification } from "../notification/notification.utils";
 import { INotification } from "../notification/notification.inerface";
 
@@ -30,7 +30,7 @@ const generateOccurrences = async (appointment: IIApoinment): Promise<IOccurrenc
   } = appointment;
 
   if (!start_date || !Array.isArray(times) || times.length !== 2) {
-    throw new Error("Invalid or missing start_date/times for appointment.");
+    throw new AppError(httpStatus.NOT_FOUND, 'Invalid or missing start_date/times for appointment.');
   }
 
   const [startTime, endTime] = times;
@@ -112,12 +112,16 @@ const createAppointment = async (companyId: string, payload: IIApoinment) => {
 };
 
 
-const cancelOccurrence = async (occurrenceId: string) => {
-  return await AppointmentOccurrence.findByIdAndUpdate(
+const updateStatusOccurence = async (occurrenceId: string, status: string) => {
+  const res = await AppointmentOccurrence.findByIdAndUpdate(
     occurrenceId,
-    { status: "cancelled" },
+    { status },
     { new: true }
   );
+  if (!res) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Appoinment not found');
+  }
+  return res;
 };
 
 
@@ -369,10 +373,83 @@ const allAppoinments_By_patient = async (patient_id: string, query: Record<strin
   const status = query?.status;
   const quer = status ? { status, patient_id } : { patient_id };
 
-  const appoinments = await AppointmentOccurrence.find(quer).populate("appointment").populate({path : "staff_ids", select : "-password -verification"}).populate({path : "patient_id", select : "-password -verification"});
+  const appoinments = await AppointmentOccurrence.find(quer).populate("appointment").populate({ path: "staff_ids", select: "-password -verification" }).populate({ path: "patient_id", select: "-password -verification" });
 
   return appoinments;
 }
+
+const allAppoinments_By_staff = async (staff_id: string, query: Record<string, any>) => {
+  const status = query?.status;
+  const quer = status ? { status, staff_ids: { $in: [staff_id] } } : { staff_ids: { $in: [staff_id] } };
+
+  const appoinments = await AppointmentOccurrence.find(quer).populate("appointment").populate({ path: "staff_ids", select: "-password -verification" }).populate({ path: "patient_id", select: "-password -verification" });
+
+  return appoinments;
+}
+
+type AppointmentStatus = "completed" | "cancelled" | "upcoming";
+
+interface AppointmentStats {
+  completed: number;
+  cancelled: number;
+  upcoming: number;
+  total: number;
+}
+
+const getMonthlyAppointmentStats = async (query: Record<string, any>): Promise<AppointmentStats> => {
+
+  const staff = query?.staff || null;
+  const pattient = query?.patient || null;
+
+  const monthYear = query?.monthYear || null;
+
+  const now = new Date();
+
+  const [year, month] = monthYear ? monthYear.split("-").map(Number) : [now.getFullYear(), now.getMonth() + 1];
+
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 1);
+
+  const matchStage: Record<string, any> = {
+    start_datetime: {
+      $gte: startDate,
+      $lt: endDate
+    }
+  };
+
+  // If staffId or patient Id provided, add filter
+  if (staff && staff !== null) {
+    matchStage.staff_ids = { $in: [new mongoose.Types.ObjectId(staff)] };
+  }
+  else if (pattient && pattient !== null) {
+    matchStage.patient_id = new mongoose.Types.ObjectId(pattient);
+  }
+
+  const stats = await AppointmentOccurrence.aggregate<{ _id: AppointmentStatus; count: number }>([
+    { $match: matchStage },
+    {
+      $group: {
+        _id: "$status",
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  const result: AppointmentStats = {
+    completed: 0,
+    cancelled: 0,
+    upcoming: 0,
+    total: 0
+  };
+
+  stats.forEach(item => {
+    result[item._id] = item.count;
+    result.total += item.count;
+  });
+
+  return result;
+};
+
 
 
 const updateAppointment = async (id: string, payload: IIApoinment) => {
@@ -452,11 +529,13 @@ const sendNotificationReminder = async (occurenceId: string, userId: string) => 
 
 export const appoinmentsService = {
   createAppointment,
-  cancelOccurrence,
+  updateStatusOccurence,
   getFreeStaff,
   allAppointments_byCompany_WithStaffStatus,
   updateAppointment,
   markStaffUnavailable,
   sendNotificationReminder,
-  allAppoinments_By_patient
+  allAppoinments_By_patient,
+  allAppoinments_By_staff,
+  getMonthlyAppointmentStats
 }

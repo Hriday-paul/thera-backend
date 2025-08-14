@@ -2,7 +2,7 @@ import { Router } from "express";
 import auth from "../../middleware/auth";
 import { USER_ROLE } from "../user/user.constants";
 import { appoinmentControler } from "./appoinments.controler";
-import { AppointmentReminderValidate, createAppointmentValidate } from "./appoinments.validator";
+import { AppointmentReminderValidate, AppointmentStatusValidate, createAppointmentValidate, validateMonthYear } from "./appoinments.validator";
 import req_validator from "../../middleware/req_validation";
 
 const router = Router();
@@ -21,11 +21,11 @@ router.post("/reminder",
     appoinmentControler.sendNotificationReminder
 )
 
-router.patch("/cancel",
-    AppointmentReminderValidate,
+router.patch("/update-status",
+    AppointmentStatusValidate,
     req_validator(),
     auth(USER_ROLE.company),
-    appoinmentControler.cancelOccurrence
+    appoinmentControler.updateStatusOccurence
 )
 
 router.get(
@@ -37,6 +37,19 @@ router.get(
     '/by-patient/:id',
     auth(USER_ROLE.company),
     appoinmentControler.allAppoinments_By_patient,
+);
+router.get(
+    '/by-staff/:id',
+    auth(USER_ROLE.company),
+    appoinmentControler.allAppoinments_By_staff,
+);
+
+router.get(
+    '/stats',
+    validateMonthYear,
+    req_validator(),
+    auth(USER_ROLE.company),
+    appoinmentControler.getMonthlyAppointmentStats,
 );
 
 export const AppoinmentRouts = router;

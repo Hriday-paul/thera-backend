@@ -122,7 +122,7 @@ const staffs = async (company_id: string) => {
 }
 
 // add new patient
-const add_new_Patient = async (payload: IIPatient, company_id: string) => {
+const add_new_Patient = async (payload: IIPatient, image : string, company_id: string) => {
     const {
         email,
         password = '',
@@ -153,6 +153,7 @@ const add_new_Patient = async (payload: IIPatient, company_id: string) => {
         email,
         password: hashedPassword,
         role: "patient",
+        image,
         patient: patient?._id,
         patient_company_id: company_id
     }, { upsert: true, new: true })

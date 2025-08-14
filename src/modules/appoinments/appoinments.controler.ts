@@ -68,14 +68,14 @@ const sendNotificationReminder = catchAsync(async (req: Request, res: Response) 
     });
 })
 
-const cancelOccurrence = catchAsync(async (req: Request, res: Response) => {
+const updateStatusOccurence = catchAsync(async (req: Request, res: Response) => {
 
-    const result = await appoinmentsService.cancelOccurrence(req?.body?.occurenceId);
+    const result = await appoinmentsService.updateStatusOccurence(req?.body?.occurenceId, req?.body?.status);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: 'Appoinment canceled successfully',
+        message: 'Appoinment status updated successfully',
         data: result,
     });
 })
@@ -92,11 +92,37 @@ const allAppoinments_By_patient = catchAsync(async (req: Request, res: Response)
     });
 })
 
+const allAppoinments_By_staff = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await appoinmentsService.allAppoinments_By_staff(req?.params?.id, req?.query);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Appoinments retrived successfully',
+        data: result,
+    });
+})
+
+const getMonthlyAppointmentStats = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await appoinmentsService.getMonthlyAppointmentStats(req?.query);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Appoinment stats retrived successfully',
+        data: result,
+    });
+})
+
 export const appoinmentControler = {
     createAppointment,
     getFreeStaff,
     allAppointments_byCompany_WithStaffStatus,
     sendNotificationReminder,
-    cancelOccurrence,
-    allAppoinments_By_patient
+    updateStatusOccurence,
+    allAppoinments_By_patient,
+    allAppoinments_By_staff,
+    getMonthlyAppointmentStats
 }

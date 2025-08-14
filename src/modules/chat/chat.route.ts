@@ -48,6 +48,14 @@ router.get(
 );
 
 router.get(
+  '/not-chat-users',
+  auth(
+    USER_ROLE.company,
+  ),
+  chatController.allUserToMyCompanyNotInChat,
+);
+
+router.get(
   '/:id',
   auth(
     USER_ROLE.admin,

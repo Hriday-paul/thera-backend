@@ -4,6 +4,7 @@ import Chat from './chat.models';
 import { IChat } from './chat.interface';
 import Message from '../messages/messages.models';
 import { User } from '../user/user.models';
+import mongoose from 'mongoose';
 
 // Create chat
 const createChat = async (payload: IChat) => {
@@ -35,13 +36,23 @@ const createChat = async (payload: IChat) => {
 };
 
 // Get my chat list
-const getMyChatList = async (userId: string) => {
+const getMyChatList = async (userId: string, searchText?: string) => {
+
+  const searchTerm = searchText ?? ""
+
   const chats = await Chat.find({
     participants: { $all: userId },
   }).populate({
     path: 'participants',
-    select: 'email first_name role _id last_name image',
-    match: { _id: { $ne: userId } },
+    select: 'email name role _id image',
+    // match: { _id: { $ne: userId } },
+    match: {
+      _id: { $ne: userId }, // exclude yourself
+      $or: [
+        { name: { $regex: searchTerm, $options: "i" } },
+        { email: { $regex: searchTerm, $options: "i" } },
+      ],
+    },
   });
 
   if (!chats) {
@@ -51,6 +62,10 @@ const getMyChatList = async (userId: string) => {
   const data = [];
   for (const chatItem of chats) {
     const chatId = chatItem?._id;
+
+    if (chatItem?.participants?.length <= 0) {
+      break;
+    }
 
     // Find the latest message in the chat
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -108,10 +123,88 @@ const deleteChatList = async (id: string) => {
   return result;
 };
 
+const allUserToMyCompanyNotInChat = async (companyId: string, query: Record<string, any>) => {
+  const companyObjectId = new mongoose.Types.ObjectId(companyId);
+
+  const { role, searchTerm } = query;
+
+  const matchConditions: any = {
+    isDeleted: false,
+    isDisable: false,
+    $or: [
+      { staf_company_id: companyObjectId },
+      { patient_company_id: companyObjectId }
+    ]
+  };
+
+  // Add role filter if provided
+  if (role) {
+    matchConditions.role = role;
+  }
+
+  // Add search filter if provided
+  if (searchTerm) {
+    const regex = new RegExp(searchTerm, "i");
+    matchConditions.$and = [
+      {
+        $or: [
+          { name: regex },
+          { email: regex }
+        ]
+      }
+    ];
+  }
+
+  const users = await User.aggregate([
+    { $match: matchConditions },
+
+    // Lookup existing chats where company is a participant
+    {
+      $lookup: {
+        from: "chats",
+        let: { userId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $in: [companyObjectId, "$participants"] },
+                  { $in: ["$$userId", "$participants"] }
+                ]
+              }
+            }
+          }
+        ],
+        as: "existingChat"
+      }
+    },
+
+    // Only users without a chat with this company
+    {
+      $match: {
+        existingChat: { $size: 0 }
+      }
+    },
+
+    // Exclude sensitive fields
+    {
+      $project: {
+        password: 0,
+        existingChat: 0,
+        fcmToken: 0,
+        verification: 0
+      }
+    }
+  ]);
+
+  return users;
+};
+
 export const chatService = {
   createChat,
   getMyChatList,
   getChatById,
   updateChatList,
   deleteChatList,
+  allUserToMyCompanyNotInChat
 };

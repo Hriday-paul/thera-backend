@@ -1,4 +1,4 @@
-import { check } from "express-validator";
+import { check, query } from "express-validator";
 
 export const createAppointmentValidate = [
     check("title")
@@ -65,4 +65,21 @@ export const AppointmentReminderValidate = [
     check("occurenceId")
         .notEmpty().withMessage("appoinment is required.")
         .isMongoId().withMessage("Invalid appoinment"),
+]
+
+export const validateMonthYear = [
+    query("monthYear")
+        .optional()
+        .matches(/^\d{4}-(0[1-9]|1[0-2])$/)
+        .withMessage("monthYear must be in 'YYYY-MM' format (e.g., 2025-05)")
+];
+
+export const AppointmentStatusValidate = [
+    check("occurenceId")
+        .notEmpty().withMessage("appoinment is required.")
+        .isMongoId().withMessage("Invalid appoinment"),
+
+    check("status")
+        .notEmpty().withMessage("status is required.")
+        .isIn(["upcoming", "completed", "cancelled", "no_show"]).withMessage("Invalid status"),
 ]

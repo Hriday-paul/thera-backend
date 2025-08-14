@@ -291,6 +291,7 @@ const userSchema: Schema<IUser> = new Schema(
     patient: { type: Schema.Types.ObjectId, ref: "patients", default: null },
     staf: { type: Schema.Types.ObjectId, ref: "stafs", default: null },
     staf_company_id: { type: Schema.Types.ObjectId, ref: "users", default: null },
+    patient_company_id: { type: Schema.Types.ObjectId, ref: "users", default: null },
   },
   {
     timestamps: true,
