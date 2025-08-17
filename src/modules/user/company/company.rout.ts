@@ -19,6 +19,12 @@ router.get(
     companyControler.myProfile,
 );
 
+router.patch(
+    '/profile',
+    auth(USER_ROLE.company),
+    companyControler.updateCompany,
+);
+
 
 
 router.post(

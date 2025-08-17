@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { IBilling, ICompany, IContact, IFamilyGroup, InsuranceType, IOrgLocation, IPatient, IPerson, IStaf, IUser } from './user.interface';
+import { IBilling, ICompany, IContact, IFamilyGroup, InsuranceType, IOrgLocation, IPatient, IPerson, IService, IStaf, IUser } from './user.interface';
 
 const OrgLocationSchema = new Schema<IOrgLocation>({
   state: { type: String },
@@ -11,6 +11,24 @@ const OrgLocationSchema = new Schema<IOrgLocation>({
   phone: { type: String },
   rooms: [{ type: String }]
 });
+
+const SeviceSchema = new Schema<IService>({
+  service_category: { type: String },
+  service_code: { type: String },
+  service_offered: { type: String },
+  amount: { type: Number },
+  service_period: { type: String },
+  unit: { type: String },
+});
+
+const billingSchema = new Schema({
+  state: { type: String },
+  street: { type: String },
+  zip_code: { type: String },
+  email: { type: String },
+  fax: { type: String },
+  phone: { type: String },
+})
 
 const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
   {
@@ -31,7 +49,19 @@ const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
     track_pqrs_measure: { type: Boolean, default: false },
     cfr_part2: { type: Boolean, default: false },
 
-    locations: { type: [OrgLocationSchema] }
+    hide_date_creation_progress_note: { type: Boolean, default: false },
+    required_diagnostic_code: { type: Boolean, default: false },
+    enable_telehealth: { type: Boolean, default: false },
+
+    locations: { type: [OrgLocationSchema] },
+    services: { type: [SeviceSchema] },
+
+    currency: { type: String },
+    default_billing_place: { type: String },
+    billingDetails: { type: billingSchema },
+
+    appointment_kept: { type: Boolean, default: false }
+
   }
 );
 
@@ -214,7 +244,7 @@ const patientSchema: Schema<IPatient> = new Schema<IPatient>(
     payment_amount: { type: Number, default: 0 },
     // contactPreferences: { type: String },
     hasInsurance: { type: String },
-    insurances: { type: [insuranceSchema], default: [] }
+    insurances: { type: [insuranceSchema], default: [] },
   }
 );
 

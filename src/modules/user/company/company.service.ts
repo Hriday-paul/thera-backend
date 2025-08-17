@@ -1,5 +1,5 @@
 import AppError from "../../../error/AppError";
-import { IOrgLocation } from "../user.interface";
+import { IICompany, IOrgLocation } from "../user.interface";
 import { Company, User } from "../user.models";
 import httpStatus from "http-status"
 
@@ -36,7 +36,35 @@ const myProfile = async (userId: string) => {
     return user;
 }
 
+const updateCompany = async (companyId: string, payload: IICompany) => {
+
+    const user = await User.findByIdAndUpdate({ _id: companyId }, { name: payload?.name, image: payload?.image ?? undefined }, { new: true })
+
+    //check patient is exist or not
+    if (!user) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    }
+
+    if (!user?.company) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    }
+
+    const { _id, ...clonePayload } = payload
+
+    const updatedStaff = await Company.updateOne({ _id: user?.company }, clonePayload);
+
+    return updatedStaff;
+
+}
+
 export const companyService = {
     addCompanyLocation,
-    myProfile
+    myProfile,
+    updateCompany
 }

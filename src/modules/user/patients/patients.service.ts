@@ -35,18 +35,18 @@ const updatePatient = async (patientId: string, payload: IIPatient) => {
     if (!user) {
         throw new AppError(
             httpStatus.NOT_FOUND,
-            'Staff not found',
+            'Patient not found',
         );
     }
 
     if (!user?.patient) {
         throw new AppError(
             httpStatus.NOT_FOUND,
-            'Staff not found',
+            'Patient not found',
         );
     }
 
-    const {_id, ...clonePayload} = payload
+    const { _id, ...clonePayload } = payload
 
     const updatedStaff = await Patient.updateOne({ _id: user?.patient }, clonePayload);
 
@@ -60,7 +60,13 @@ export const patientsListsWithAppoinmentHistory = async (companyId: string, quer
     const limit = query.limit || 10;
     const skip = (page - 1) * limit;
 
-    const searchTerm = query?.searchTerm
+    const searchTerm = query?.searchTerm;
+    const isDisabled = query?.isDisabled;
+
+    const disabledFilter =
+        typeof isDisabled !== "undefined"
+            ? { isDisable: isDisabled === "true" || isDisabled === true } // handle query strings too
+            : {};
 
     const searchFilter = searchTerm
         ? {
@@ -79,7 +85,8 @@ export const patientsListsWithAppoinmentHistory = async (companyId: string, quer
             $match: {
                 role: "patient",
                 patient_company_id: new Types.ObjectId(companyId),
-                ...searchFilter
+                ...searchFilter,
+                ...disabledFilter,
             }
         },
         {

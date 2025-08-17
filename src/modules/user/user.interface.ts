@@ -15,7 +15,7 @@ export interface IUser {
     expiresAt: Date;
     status: boolean;
   };
-  isOnline : boolean,
+  isOnline: boolean,
   fcmToken?: string;
   isDeleted: boolean,
   isDisable: boolean,
@@ -26,16 +26,25 @@ export interface IUser {
   patient_company_id: Types.ObjectId,
 }
 
-export interface IOrgLocation{
+export interface IOrgLocation {
   state: string,
-  city : string,
+  city: string,
   zip_code: string,
   street: string,
 
-  email : string,
-  phone : string,
-  fax : string,
-  rooms : string[]
+  email: string,
+  phone: string,
+  fax: string,
+  rooms: string[]
+}
+
+export interface IService {
+  service_category: string,
+  service_code: string,
+  service_offered: string,
+  amount: number,
+  service_period: string,
+  unit: string
 }
 
 export interface ICompany {
@@ -52,11 +61,45 @@ export interface ICompany {
   organization_npi?: string,
   facility_npi?: string,
   diagnostic_code: string,
+
   pregnancy_related_services: boolean,
   track_pqrs_measure: boolean,
   cfr_part2: boolean,
 
-  locations : IOrgLocation[]
+  hide_date_creation_progress_note: boolean,
+  required_diagnostic_code: boolean,
+  enable_telehealth: boolean,
+
+  country: string,
+  state: string,
+  zip_code: string,
+  street: string,
+  org_phone: string,
+  city: string,
+  org_email: string,
+  fax_num: string,
+  
+
+  locations: IOrgLocation[],
+  services: IService[],
+
+  currency: string,
+
+  default_billing_place: string,
+
+  billingDetails: {
+    state: string,
+    zip_code: string,
+    street: string,
+
+    email: string,
+    phone: string,
+    fax: string
+  },
+
+  appointment_kept : boolean
+
+
 }
 
 export interface IStaf {
@@ -152,9 +195,9 @@ export interface IPatient {
 
   contacts: IContact[],
 
-  familyGroup : IFamilyGroup,
+  familyGroup: IFamilyGroup,
 
-  billing_details : IBilling | null
+  billing_details: IBilling | null
 
 
   legal_date?: Date;
@@ -202,7 +245,7 @@ export interface IPatient {
   family_income_type: string;
   payment_amount: number;
   hasInsurance: string
-  insurances : InsuranceType[]
+  insurances: InsuranceType[]
 }
 
 export interface InsuranceType {

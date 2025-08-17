@@ -26,7 +26,18 @@ const myProfile = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const updateCompany = catchAsync(async (req: Request, res: Response) => {
+    const result = await companyService.updateCompany(req?.user?._id, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Your company profile updated successfully',
+        data: result,
+    });
+});
+
 export const companyControler = {
     addCompanyLocation,
-    myProfile
+    myProfile,
+    updateCompany
 }
