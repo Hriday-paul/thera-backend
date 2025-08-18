@@ -44,7 +44,8 @@ export interface IService {
   service_offered: string,
   amount: number,
   service_period: string,
-  unit: string
+  unit: string,
+  isArchived : boolean
 }
 
 export interface ICompany {

@@ -16,6 +16,7 @@ router.post(
 );
 
 router.get("/by-patient/:id", auth(USER_ROLE.company), caseFileControler.CaseFilesByPatient);
+router.get("/by-company", auth(USER_ROLE.company), caseFileControler.CaseFilesCompany);
 
 router.get("/stats/:id", auth(USER_ROLE.company), caseFileControler.CaseFileStats);
 

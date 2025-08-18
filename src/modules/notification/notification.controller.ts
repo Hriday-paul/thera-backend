@@ -8,13 +8,13 @@ import Notification from "./notification.model";
 import { notificationServices } from "./notification.service";
 
 const getAllNotification = catchAsync(async (req: Request, res: Response) => {
-  const query = { ...req.query };
-  query["receiver"] = req.user._id;
-  const result = await notificationServices.getNotificationFromDb(query);
+  // const query = { ...req.query };
+  // query["receiver"] = req.user._id;
+  const result = await notificationServices.getNotificationFromDb(req?.user?._id, req.query);
   sendResponse(res, {
     statusCode: 200,
     success: true,
-    message: "Notifications retrieved successfully",
+    message: "Notifications retrived successfully",
     data: result,
   });
 });
@@ -57,10 +57,38 @@ const makeReadAll = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 
+});
+
+const unreadNotificationCount = catchAsync(async (req: Request, res: Response) => {
+
+  const result = await notificationServices.unreadNotificationCount(req?.user._id);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "All notifications count get successfully",
+    data: result,
+  });
+
+})
+
+const deleteNotification = catchAsync(async (req: Request, res: Response) => {
+
+  const result = await notificationServices.deleteNotification(req.params.id);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Notifications deleted successfully",
+    data: result,
+  });
+
 })
 
 export const notificationController = {
   getAllNotification,
   makeRead,
-  makeReadAll
+  makeReadAll,
+  unreadNotificationCount,
+  deleteNotification
 };

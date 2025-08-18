@@ -7,20 +7,32 @@ const router = Router();
 
 router.get(
   "/",
-  auth(USER_ROLE.user, USER_ROLE.admin),
+   auth(USER_ROLE.admin, USER_ROLE.staf, USER_ROLE.patient, USER_ROLE.company),
   notificationController.getAllNotification
 );
 
 router.put(
   "/make-read/:id",
-  auth(USER_ROLE.admin, USER_ROLE.user),
+    auth(USER_ROLE.admin, USER_ROLE.staf, USER_ROLE.patient, USER_ROLE.company),
   notificationController.makeRead
+);
+
+router.get(
+  "/count-notification",
+  auth(USER_ROLE.admin, USER_ROLE.staf, USER_ROLE.patient, USER_ROLE.company),
+  notificationController.unreadNotificationCount
 );
 
 router.put(
   "/make-read-all",
-  auth(USER_ROLE.admin, USER_ROLE.user),
+   auth(USER_ROLE.admin, USER_ROLE.staf, USER_ROLE.patient, USER_ROLE.company),
   notificationController.makeReadAll
+);
+
+router.delete(
+  "/:id",
+   auth(USER_ROLE.admin, USER_ROLE.staf, USER_ROLE.patient, USER_ROLE.company),
+  notificationController.deleteNotification
 );
 
 export const notificationRoute = router;

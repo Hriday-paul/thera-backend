@@ -3,6 +3,7 @@ import catchAsync from "../../../utils/catchAsync";
 import { companyService } from "./company.service";
 import sendResponse from "../../../utils/sendResponse";
 import httpStatus from "http-status"
+import config from "../../../config";
 
 //add new location to company
 const addCompanyLocation = catchAsync(async (req: Request, res: Response) => {
@@ -27,6 +28,12 @@ const myProfile = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateCompany = catchAsync(async (req: Request, res: Response) => {
+    let image;
+
+    image = req.file?.filename && (config.BASE_URL + '/images/' + req.file.filename);
+
+    req.body.image = image
+
     const result = await companyService.updateCompany(req?.user?._id, req.body);
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -35,9 +42,54 @@ const updateCompany = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
+const services = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await companyService.services(req?.user?._id, req.query);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Your company services retrived successfully',
+        data: result,
+    });
+});
+const addNewService = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await companyService.addNewService(req?.user?._id, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'New service added to your company',
+        data: result,
+    });
+});
+const editService = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await companyService.editService(req?.user?._id, req?.params?.id, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Service updated successfully',
+        data: result,
+    });
+});
+const deleteService = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await companyService.deleteService(req?.user?._id, req?.params?.id);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Service deleted successfully',
+        data: result,
+    });
+});
 
 export const companyControler = {
     addCompanyLocation,
     myProfile,
-    updateCompany
+    updateCompany,
+    services,
+    addNewService,
+    editService,
+    deleteService
 }

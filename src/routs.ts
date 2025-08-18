@@ -13,6 +13,8 @@ import { paymentsRoutes } from './modules/payments/payments.route';
 import { CaseFileRouts } from './modules/case_files/case_files.route';
 import { AppoinmentRouts } from './modules/appoinments/appoinments.route';
 import { chatRoutes } from './modules/chat/chat.route';
+import { messagesRoutes } from './modules/messages/messages.route';
+import { notificationRoute } from './modules/notification/notification.routes';
 
 
 const router = express.Router();
@@ -69,6 +71,14 @@ const moduleRoutes = [
     {
         path: '/chats',
         route: chatRoutes,
+    },
+    {
+        path: '/notifications',
+        route: notificationRoute,
+    },
+    {
+        path: '/messages',
+        route: messagesRoutes,
     },
 
 ];

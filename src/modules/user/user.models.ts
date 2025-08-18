@@ -19,6 +19,7 @@ const SeviceSchema = new Schema<IService>({
   amount: { type: Number },
   service_period: { type: String },
   unit: { type: String },
+  isArchived : {type : Boolean, default : false}
 });
 
 const billingSchema = new Schema({
@@ -53,14 +54,23 @@ const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
     required_diagnostic_code: { type: Boolean, default: false },
     enable_telehealth: { type: Boolean, default: false },
 
+    city : {type : String},
+    state : {type : String},
+    country : {type : String},
+    fax_num : {type : String},
+    org_email : {type : String},
+    org_phone : {type : String},
+    street : {type : String},
+    zip_code : {type : String},
+    billingDetails : {type : billingSchema},
+
     locations: { type: [OrgLocationSchema] },
     services: { type: [SeviceSchema] },
 
     currency: { type: String },
     default_billing_place: { type: String },
-    billingDetails: { type: billingSchema },
 
-    appointment_kept: { type: Boolean, default: false }
+    appointment_kept: { type: Boolean, default: false },
 
   }
 );

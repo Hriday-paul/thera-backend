@@ -6,6 +6,7 @@ import { IMessages } from './messages.interface';
 import Chat from '../chat/chat.models';
 import { chatService } from '../chat/chat.service';
 import { io } from '../../server';
+import { Types } from 'mongoose';
 
 
 const createMessages = async (payload: IMessages) => {
@@ -113,6 +114,12 @@ const getMessagesById = async (id: string) => {
   return result;
 };
 
+const unreadMessageCount = async (id: string) => {
+  const result = await Message.countDocuments({ receiver: new Types.ObjectId(id), seen : false });
+  
+  return result;
+};
+
 const deleteMessages = async (id: string) => {
   const message = await Message.findById(id);
   if (!message) {
@@ -162,4 +169,5 @@ export const messagesService = {
   getAllMessages,
   deleteMessages,
   seenMessage,
+  unreadMessageCount
 };

@@ -5,7 +5,7 @@ import sendResponse from "../../utils/sendResponse";
 
 const createcaseFile = catchAsync(async (req: Request, res: Response) => {
 
-    const result = await CaseFileService.createcaseFile(req.body);
+    const result = await CaseFileService.createcaseFile(req?.user?._id, req.body);
     sendResponse(res, {
         statusCode: 200,
         success: true,
@@ -17,6 +17,17 @@ const createcaseFile = catchAsync(async (req: Request, res: Response) => {
 const CaseFilesByPatient = catchAsync(async (req: Request, res: Response) => {
 
     const result = await CaseFileService.CaseFilesByPatient(req.params.id, req.query);
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: 'Case file retrived successfully',
+        data: result,
+    });
+});
+const CaseFilesCompany = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await CaseFileService.CaseFilesByCompany(req?.user?._id, req.query);
 
     sendResponse(res, {
         statusCode: 200,
@@ -54,5 +65,6 @@ export const caseFileControler = {
     createcaseFile,
     CaseFilesByPatient,
     updateCaseFileStatus,
-    CaseFileStats
+    CaseFileStats,
+    CaseFilesCompany
 }

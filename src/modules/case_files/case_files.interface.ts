@@ -9,5 +9,6 @@ export interface ICaseFile {
     intake_date_time : Date,
     assign_stafs: Types.ObjectId[],
     isClosed : boolean,
-    isDeleted : boolean
+    isDeleted : boolean,
+    companyId : Types.ObjectId
 }

@@ -44,6 +44,12 @@ router.delete(
 );
 
 router.get(
+  '/unread-count',
+  auth(USER_ROLE.company, USER_ROLE.patient, USER_ROLE.staf, USER_ROLE.admin),
+  messagesController.unreadMessageCount,
+);
+
+router.get(
   '/:id',
   auth(USER_ROLE.user, USER_ROLE.admin),
   messagesController.getMessagesById,

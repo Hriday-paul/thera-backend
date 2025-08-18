@@ -1,10 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Types } from "mongoose";
 import { INotification } from "./notification.inerface";
 import Notification from "./notification.model";
+import QueryBuilder from "../../builder/QueryBuilder";
 
-const getNotificationFromDb = async (query: Record<string, any>) => {
-  const result = await Notification.find({ isRead: false }).sort("-createdAt");
-  return result;
+const getNotificationFromDb = async (receiverId : string, query: Record<string, any>) => {
+  const result = new QueryBuilder(Notification.find({ receiver : receiverId }), query)
+    .search(["title", "message"])
+    .sort();
+
+  const data: any = await result.modelQuery;
+  return data;
 };
 
 const updateNotification = async (
@@ -39,9 +45,21 @@ const makeReadAll = async (user: string) => {
   return result;
 };
 
+const unreadNotificationCount = async (id: string) => {
+  const result = await Notification.countDocuments({ receiver: new Types.ObjectId(id), isRead: false });
+  return result;
+};
+
+const deleteNotification = async (id: string) => {
+  const result = await Notification.deleteOne({ _id : id });
+  return result;
+};
+
 export const notificationServices = {
   getNotificationFromDb,
   updateNotification,
   makeMeRead,
-  makeReadAll
+  makeReadAll,
+  unreadNotificationCount,
+  deleteNotification
 };

@@ -122,6 +122,16 @@ const deleteMessages = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const unreadMessageCount = catchAsync(async (req: Request, res: Response) => {
+  const result = await messagesService.unreadMessageCount(req?.user?._id);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Unread message count retrived successfully',
+    data: result,
+  });
+});
+
 export const messagesController = {
   createMessages,
   getAllMessages,
@@ -130,4 +140,5 @@ export const messagesController = {
   updateMessages,
   deleteMessages,
   seenMessage,
+  unreadMessageCount
 };

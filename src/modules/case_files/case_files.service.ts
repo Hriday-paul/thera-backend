@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import QueryBuilder from "../../builder/QueryBuilder";
 import AppError from "../../error/AppError";
 import generateRandomString from "../../utils/generateRandomString";
@@ -5,7 +6,7 @@ import { ICaseFile } from "./case_files.interface";
 import { CaseFiles } from "./case_files.model";
 import httpStatus from "http-status";
 
-const createcaseFile = async (payload: ICaseFile) => {
+const createcaseFile = async (companyId : string, payload: ICaseFile) => {
 
     const file_id = "#" + generateRandomString(10);
 
@@ -17,6 +18,16 @@ const createcaseFile = async (payload: ICaseFile) => {
 const CaseFilesByPatient = async (patient: string, query: Record<string, any>) => {
 
     const caseFileModel = new QueryBuilder(CaseFiles.find({ patient, isDeleted: false }).populate("assign_stafs").populate("patient"), query)
+        .search(["file_id", "name"])
+        .sort();
+
+    const data: any = await caseFileModel.modelQuery;
+
+    return data;
+};
+const CaseFilesByCompany = async (company: string, query: Record<string, any>) => {
+
+    const caseFileModel = new QueryBuilder(CaseFiles.find({ companyId : new Types.ObjectId(company), isDeleted: false }).populate("assign_stafs").populate("patient"), query)
         .search(["file_id", "name"])
         .sort();
 
@@ -55,5 +66,6 @@ export const CaseFileService = {
     createcaseFile,
     CaseFilesByPatient,
     updateCaseFileStatus,
-    CaseFileStats
+    CaseFileStats,
+    CaseFilesByCompany
 }
