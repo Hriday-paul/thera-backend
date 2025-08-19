@@ -10,7 +10,7 @@ const createcaseFile = async (companyId : string, payload: ICaseFile) => {
 
     const file_id = "#" + generateRandomString(10);
 
-    const res = await CaseFiles.create({ ...payload, file_id })
+    const res = await CaseFiles.create({ ...payload, file_id, companyId })
 
     return res;
 };

@@ -42,6 +42,28 @@ const updateCompany = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
+
+const updateCompanyAutomation = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await companyService.updateCompanyAutomation(req?.user?._id, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Your company automation updated successfully',
+        data: result,
+    });
+});
+
+const updateCompanyReminderMessage = catchAsync(async (req: Request, res: Response) => {
+    const result = await companyService.updateCompanyReminderMessage(req?.user?._id, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Appoinment reminder message updated successfully',
+        data: result,
+    });
+});
+
 const services = catchAsync(async (req: Request, res: Response) => {
 
     const result = await companyService.services(req?.user?._id, req.query);
@@ -84,6 +106,40 @@ const deleteService = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const locations = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await companyService.locations(req?.user?._id, req.query);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'New location added to your company',
+        data: result,
+    });
+});
+
+const editLocation = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await companyService.editLocation(req?.user?._id, req?.params?.id, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Location updated successfully',
+        data: result,
+    });
+});
+
+const deleteLocation = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await companyService.deleteLocation(req?.user?._id, req?.params?.id);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Location deleted successfully',
+        data: result,
+    });
+});
+
 export const companyControler = {
     addCompanyLocation,
     myProfile,
@@ -91,5 +147,10 @@ export const companyControler = {
     services,
     addNewService,
     editService,
-    deleteService
+    deleteService,
+    locations,
+    editLocation,
+    deleteLocation,
+    updateCompanyAutomation,
+    updateCompanyReminderMessage
 }

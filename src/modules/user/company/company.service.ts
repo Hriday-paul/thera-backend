@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import AppError from "../../../error/AppError";
-import { IICompany, IOrgLocation, IService } from "../user.interface";
+import { IICompany, IMsgTemplate, IOrgLocation, IService } from "../user.interface";
 import { Company, User } from "../user.models";
 import httpStatus from "http-status"
 
@@ -64,9 +64,69 @@ const updateCompany = async (companyId: string, payload: IICompany) => {
 
 }
 
+const updateCompanyAutomation = async (companyId: string, payload: IICompany) => {
+
+    const user = await User.findOne({ _id: companyId });
+
+    //check patient is exist or not
+    if (!user) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    }
+
+    if (!user?.company) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    }
+
+    const { _id, ...body } = payload
+
+    const res = await Company.updateOne(
+        { _id: user?.company },
+        {
+            $set: body
+        }
+    );
+
+    return res;
+}
+
+const updateCompanyReminderMessage = async (companyId: string, payload: IMsgTemplate) => {
+
+    const user = await User.findOne({ _id: companyId })
+
+    //check patient is exist or not
+    if (!user) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    }
+
+    if (!user?.company) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    }
+
+    const res = await Company.updateOne(
+        { _id: user?.company },
+        {
+            $set: payload
+        }
+    );
+
+    return res;
+}
+
 const services = async (companyId: string, query: Record<string, any>) => {
 
-    const search = query?.searchTerm
+    const search = query?.searchTerm || ""
 
     const user = await User.findOne({ _id: companyId, role: "company" }).select("company");
 
@@ -168,6 +228,96 @@ const deleteService = async (userId: string, serviceId: string) => {
     return res;
 };
 
+const locations = async (companyId: string, query: Record<string, any>) => {
+
+    const search = query?.searchTerm || ""
+
+    const user = await User.findOne({ _id: companyId, role: "company" }).select("company");
+
+    if (!user?.company) throw new AppError(httpStatus.NOT_FOUND, "Company not found");
+
+    const result = await Company.aggregate([
+        { $match: { _id: user.company } },
+        { $unwind: "$locations" },
+        {
+            $match: {
+                $or: [
+                    { "locations.state": { $regex: search, $options: "i" } },
+                    { "locations.street": { $regex: search, $options: "i" } },
+                    { "locations.city": { $regex: search, $options: "i" } },
+                    { "locations.zip_code": { $regex: search, $options: "i" } },
+                    { "locations.email": { $regex: search, $options: "i" } },
+                    { "locations.fax": { $regex: search, $options: "i" } },
+                    { "locations.phone": { $regex: search, $options: "i" } },
+                ]
+            }
+        },
+        { $replaceRoot: { newRoot: "$locations" } }
+    ]);
+
+    return result;
+}
+
+const editLocation = async (userId: string, locationId: string, payload: IOrgLocation) => {
+
+    const exist = await User.findOne({ _id: userId, role: "company" }).select("company");
+
+    if (!exist?.company) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    }
+
+    const companyid = exist?.company;
+
+    const res = await Company.updateOne(
+        {
+            _id: companyid,
+            "locations._id": locationId,
+        },
+        {
+            $set: {
+                "locations.$.state": payload.state,
+                "locations.$.street": payload?.street,
+                "locations.$.city": payload?.city,
+                "locations.$.zip_code": payload?.zip_code,
+                "locations.$.email": payload?.email,
+                "locations.$.fax": payload?.fax,
+                "locations.$.phone": payload?.phone,
+                "locations.$.rooms": payload?.rooms,
+            },
+        }
+    );
+
+    return res;
+}
+
+const deleteLocation = async (userId: string, locationId: string) => {
+
+    const exist = await User.findOne({ _id: userId, role: "company" }).select("company");
+
+    if (!exist?.company) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    }
+
+    const companyid = exist?.company;
+
+    const res = await Company.updateOne(
+        { _id: companyid },
+        {
+            $pull: {
+                "locations": { _id: locationId },
+            },
+        }
+    );
+
+    return res;
+};
+
 export const companyService = {
     addCompanyLocation,
     myProfile,
@@ -175,5 +325,10 @@ export const companyService = {
     services,
     addNewService,
     editService,
-    deleteService
+    deleteService,
+    locations,
+    editLocation,
+    deleteLocation,
+    updateCompanyAutomation,
+    updateCompanyReminderMessage
 }

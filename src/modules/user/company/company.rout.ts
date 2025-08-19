@@ -41,6 +41,29 @@ router.delete(
     companyControler.deleteService,
 );
 
+router.get(
+    '/locations',
+    auth(USER_ROLE.company),
+    companyControler.locations,
+);
+
+
+router.post(
+    '/location',
+    auth(USER_ROLE.company),
+    companyControler.addCompanyLocation,
+);
+router.put(
+    '/locations/:id',
+    auth(USER_ROLE.company),
+    companyControler.editLocation,
+);
+router.delete(
+    '/locations/:id',
+    auth(USER_ROLE.company),
+    companyControler.deleteLocation,
+);
+
 router.patch(
     '/profile',
     image_Upload.single('image'),
@@ -48,13 +71,15 @@ router.patch(
     auth(USER_ROLE.company),
     companyControler.updateCompany,
 );
-
-
-
-router.post(
-    '/location',
+router.patch(
+    '/automation',
     auth(USER_ROLE.company),
-    companyControler.addCompanyLocation,
+    companyControler.updateCompanyAutomation,
+);
+router.patch(
+    '/reminder',
+    auth(USER_ROLE.company),
+    companyControler.updateCompanyReminderMessage,
 );
 
 export const CompanyRouts = router;

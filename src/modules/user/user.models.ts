@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { IBilling, ICompany, IContact, IFamilyGroup, InsuranceType, IOrgLocation, IPatient, IPerson, IService, IStaf, IUser } from './user.interface';
+import { IAutomation, IBilling, ICompany, IContact, IFamilyGroup, IMsgTemplate, InsuranceType, IOrgLocation, IPatient, IPerson, IReminder, IService, IStaf, IUser } from './user.interface';
 
 const OrgLocationSchema = new Schema<IOrgLocation>({
   state: { type: String },
@@ -19,7 +19,7 @@ const SeviceSchema = new Schema<IService>({
   amount: { type: Number },
   service_period: { type: String },
   unit: { type: String },
-  isArchived : {type : Boolean, default : false}
+  isArchived: { type: Boolean, default: false }
 });
 
 const billingSchema = new Schema({
@@ -30,6 +30,51 @@ const billingSchema = new Schema({
   fax: { type: String },
   phone: { type: String },
 })
+const reminderSchema = new Schema<IReminder>({
+  msg_type: { type: String, required: true },
+  long_ago: { type: Number, required: true },
+  time_type: { type: String, required: true },
+})
+const MsgTemplateSchema = new Schema<IMsgTemplate>({
+  sms: {
+    isActive: { type: Boolean, default: false },
+    message: { type: String, required: true, default: "Your appointment reminder for {{organisation Name}}. Reply with 1 to confirm or 2 cancel. Call\nYou have an appointment with us scheduled for {{orgCallbackNumber}} to reschedule." },
+  },
+  email: {
+    isActive: { type: Boolean, default: true },
+    message: { type: String, required: true },
+  },
+})
+
+const AutomationsSchema: Schema<IAutomation> = new Schema({
+  claim_service: { type: Boolean, default: true },
+
+  eligibility: {
+    new_patient_Check: { type: Boolean, default: true },
+    batchCheck: { type: Boolean, default: true },
+    primary_secondary_bill: { type: Boolean, default: true },
+  },
+
+  others: {
+    invoice_creaton: { type: Boolean, default: true },
+    invoice_process: { type: Boolean, default: true },
+    claim_submission: { type: Boolean, default: true },
+    era_process: { type: Boolean, default: false },
+    urchive_unmatch_era_claim: { type: Boolean, default: false },
+  },
+
+  chat: {
+    staff: {
+      allow_see_patient_list: { type: Boolean, default: true },
+      allow_chat_by_all_patients: { type: Boolean, default: true },
+      allow_chat_with_staff: { type: Boolean, default: true },
+    },
+    patient: {
+      allow_see_staffs: { type: Boolean, default: true },
+      allow_chat_with_staff: { type: Boolean, default: true },
+    },
+  },
+}, { _id: false });
 
 const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
   {
@@ -54,15 +99,15 @@ const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
     required_diagnostic_code: { type: Boolean, default: false },
     enable_telehealth: { type: Boolean, default: false },
 
-    city : {type : String},
-    state : {type : String},
-    country : {type : String},
-    fax_num : {type : String},
-    org_email : {type : String},
-    org_phone : {type : String},
-    street : {type : String},
-    zip_code : {type : String},
-    billingDetails : {type : billingSchema},
+    city: { type: String },
+    state: { type: String },
+    country: { type: String },
+    fax_num: { type: String },
+    org_email: { type: String },
+    org_phone: { type: String },
+    street: { type: String },
+    zip_code: { type: String },
+    billingDetails: { type: billingSchema },
 
     locations: { type: [OrgLocationSchema] },
     services: { type: [SeviceSchema] },
@@ -71,6 +116,17 @@ const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
     default_billing_place: { type: String },
 
     appointment_kept: { type: Boolean, default: false },
+
+    automations: AutomationsSchema,
+    reminderTypes: {
+      type: [reminderSchema], default: [{
+        msg_type: "Email",
+        long_ago: 1,
+        time_type: "Hours"
+      }]
+    },
+
+    msg_templates: { type: MsgTemplateSchema }
 
   }
 );

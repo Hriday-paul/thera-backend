@@ -45,7 +45,51 @@ export interface IService {
   amount: number,
   service_period: string,
   unit: string,
-  isArchived : boolean
+  isArchived: boolean
+}
+
+export interface IAutomation {
+  claim_service: boolean,
+  eligibility: {
+    new_patient_Check: boolean,
+    batchCheck: boolean,
+    primary_secondary_bill: boolean
+  },
+  others: {
+    invoice_creaton: boolean,
+    invoice_process: boolean,
+    claim_submission: boolean
+    era_process: boolean,
+    urchive_unmatch_era_claim: boolean
+  },
+  chat: {
+    staff: {
+      allow_see_patient_list: boolean,
+      allow_chat_by_all_patients: boolean,
+      allow_chat_with_staff: boolean
+    },
+    patient: {
+      allow_see_staffs: boolean,
+      allow_chat_with_staff: boolean,
+    }
+  }
+}
+
+export interface IReminder {
+  msg_type: string,
+  long_ago: number,
+  time_type: string
+}
+
+export interface IMsgTemplate {
+  sms: {
+    isActive: boolean
+    message: string
+  },
+  email: {
+    isActive: boolean
+    message: string
+  }
 }
 
 export interface ICompany {
@@ -79,7 +123,7 @@ export interface ICompany {
   city: string,
   org_email: string,
   fax_num: string,
-  
+
 
   locations: IOrgLocation[],
   services: IService[],
@@ -98,10 +142,15 @@ export interface ICompany {
     fax: string
   },
 
-  appointment_kept : boolean
+  appointment_kept: boolean,
 
+  automations: IAutomation,
 
+  reminderTypes: IReminder[],
+  msg_templates: IMsgTemplate
 }
+
+
 
 export interface IStaf {
   name_title: string,
