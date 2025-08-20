@@ -8,56 +8,63 @@ import { createCheckoutSession } from './payments.utils';
 import { startSession, Types } from 'mongoose';
 import { User } from '../user/user.models';
 import { IUser } from '../user/user.interface';
-import { IOrder } from '../order/order.interface';
-import Order from '../order/order.model';
+import generateRandomString from '../../utils/generateRandomString';
+import { IPackage } from '../package/package.interface';
+import Package from '../package/package.model';
 import QueryBuilder from '../../builder/QueryBuilder';
+import Active_Package from '../active_package/active_package.model';
 
 
 const stripe = new Stripe(config.stripe?.stripe_api_secret as string, {
-  apiVersion: "2025-03-31.basil",
+  apiVersion: "2025-03-31.basil", // Valid API version
   typescript: true,
 });
 
-interface IIorder extends IOrder {
-  _id: Types.ObjectId;
-}
-
 //-----------------create acheck out url---------------------
-const checkout = async (payload: IIorder, userId: string, product_names: string) => {
+const checkout = async (packageId: string, userId: string, clientNextUrl : string) => {
+  const tranId = generateRandomString(10);
 
-  const order: IIorder | null = await Order.findById(
-    payload?._id,
+  const foundPackage: IPackage | null = await Package.findById(
+    packageId,
   )
 
-  if (!order) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Order Not Found!');
+  if (!foundPackage) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Boasting Package Not Found!');
   }
 
-  const createdPayment = await Payment.create({ user: userId, tranId: order?.tranId, total_amount: order?.total_amount, order: order?._id });
+  const startedAt = Date.now();
+  const expiredAt = Date.now() + foundPackage.duration_day * 24 * 60 * 60 * 1000
 
-
-  if (!createdPayment) {
-    throw new AppError(
-      httpStatus.INTERNAL_SERVER_ERROR,
-      'Failed to create payment',
-    );
+  interface INewPayment extends IPayment {
+    user: IUser // after population, user will be an object, not just an ID
   }
 
-  if (!createdPayment) throw new AppError(httpStatus.BAD_REQUEST, 'payment create failed');
+  const paymentData = await Payment.findOneAndUpdate(
+    {
+      isPaid: false,
+      user: userId,
+    },
+    { user: userId, tranId, total_amount: foundPackage?.price, expiredAt, startedAt, package: foundPackage?._id, isPaid: false },
+    { new: true, upsert: true },
+  ).populate("user") as INewPayment;
+
+  if (!paymentData) throw new AppError(httpStatus.BAD_REQUEST, 'payment not found');
 
   const checkoutSession = await createCheckoutSession({
     // customerId: customer.id,
     product: {
-      amount: order?.total_amount,
+      amount: paymentData?.total_amount,
       //@ts-ignore
-      name: product_names,
+      name: foundPackage?.title,
       quantity: 1,
     },
 
+    user: paymentData?.user,
 
     //@ts-ignore
-    paymentId: createdPayment?._id,
-  });
+    paymentId: paymentData?._id,
+
+  },clientNextUrl );
 
   return checkoutSession?.url;
 
@@ -65,6 +72,7 @@ const checkout = async (payload: IIorder, userId: string, product_names: string)
 
 
 const confirmPayment = async (query: Record<string, any>) => {
+
   const { sessionId, paymentId } = query;
   const session = await startSession();
   const PaymentSession = await stripe.checkout.sessions.retrieve(sessionId);
@@ -85,7 +93,7 @@ const confirmPayment = async (query: Record<string, any>) => {
       paymentId,
       { isPaid: true, paymentIntentId: paymentIntentId },
       { new: true, session },
-    ).populate('user') as unknown as { _id: string, order: string, tranId: string, total_amount: number, createdAt: Date, user: IUser };
+    ).populate('user')
 
     if (!payment) {
       throw new AppError(httpStatus.NOT_FOUND, 'Payment Not Found!');
@@ -98,23 +106,28 @@ const confirmPayment = async (query: Record<string, any>) => {
       throw new AppError(httpStatus.NOT_FOUND, 'User Not Found!');
     }
 
-    const order: IIorder | null = await Order.findById(
-      payment?.order,
-    ).session(session);
+    const existActive_Package = await Active_Package.findOne({ user: user?._id });
 
-    if (!order) {
-      throw new AppError(httpStatus.NOT_FOUND, 'Order Not Found!');
+
+    let new_expired
+    const currentDate = new Date();
+
+    if (existActive_Package) {
+      const isNotExpired = new Date(existActive_Package.expiredAt) >= currentDate;
+
+
+      new_expired = isNotExpired
+        ? new Date(
+          new Date(existActive_Package.expiredAt).getTime() +
+          (payment?.expiredAt ? new Date(payment.expiredAt).getTime() - currentDate.getTime() : 0)
+        )
+        : payment?.expiredAt ? new Date(payment.expiredAt) : currentDate;
+
+    } else {
+      new_expired = payment?.expiredAt ? new Date(payment.expiredAt) : new Date();
     }
 
-    await Order.findByIdAndUpdate(
-      payment?.order,
-      {
-        isPaid: true,
-      },
-      {
-        session,
-      }
-    )
+    const access_product = await Active_Package.updateOne({ user: user._id }, { expiredAt: new_expired, last_purchase_package: payment?.package, user: user?._id }, { upsert: true, session });
 
     await session.commitTransaction();
     return payment;
@@ -141,7 +154,9 @@ const confirmPayment = async (query: Record<string, any>) => {
 
 
 const getAllPayments = async (query: Record<string, any>) => {
-  const paymentModel = new QueryBuilder(Payment.find({ isPaid: true }).populate("user"), query)
+  const paymentModel = new QueryBuilder(Payment.find({ isPaid: true }).populate({ path: "user", select: "-password -fcmToken" }).populate({ path: "package" }), query)
+    .search(['name', 'email', 'contact'])
+    .filter()
     .paginate()
     .sort();
   const data: any = await paymentModel.modelQuery;
@@ -208,6 +223,54 @@ const deletePayments = async (id: string) => {
   return deletedPayment;
 };
 
+const paymentAmount = async () => {
+
+  const totalEarning = await Payment.aggregate([
+    {
+      $match: { isPaid: true }
+    },
+    {
+      $group: {
+        _id: null,
+        totalAmount: { $sum: "$total_amount" }
+      }
+    }
+  ]);
+
+  const totalAmount = totalEarning.length > 0 ? totalEarning[0].totalAmount : 0;
+
+
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const endOfToday = new Date();
+  endOfToday.setHours(23, 59, 59, 999);
+
+  const todayEarning = await Payment.aggregate([
+    {
+      $match: {
+        isPaid: true,
+        createdAt: { $gte: startOfToday, $lte: endOfToday }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        totalAmount: { $sum: "$total_amount" }
+      }
+    }
+  ]);
+
+  const totalTodayEarning = todayEarning.length > 0 ? todayEarning[0].totalAmount : 0;
+
+  return {
+    totalEarning: totalAmount,
+    todayEarning: totalTodayEarning
+  }
+
+}
+
 export const paymentsService = {
   // createPayments,
   getAllPayments,
@@ -217,4 +280,5 @@ export const paymentsService = {
   checkout,
   confirmPayment,
   getPaymentsByUserId,
+  paymentAmount
 };

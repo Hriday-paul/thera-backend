@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import config from '../../config';
+import { IUser } from '../user/user.interface';
 
 const stripe = new Stripe(config.stripe?.stripe_api_secret as string, {
   apiVersion: "2025-03-31.basil",
@@ -14,8 +15,10 @@ interface IPayload {
   };
   // customerId: string;
   paymentId: string;
+  user: IUser
 }
-export const createCheckoutSession = async (payload: IPayload) => {
+export const createCheckoutSession = async (payload: IPayload, clientNextUrl : string) => {
+
   const paymentGatewayData = await stripe.checkout.sessions.create({
     line_items: [
       {
@@ -30,7 +33,9 @@ export const createCheckoutSession = async (payload: IPayload) => {
       },
     ],
 
-    success_url: `${config.SERVER_URL}/payments/confirm-payment?sessionId={CHECKOUT_SESSION_ID}&paymentId=${payload?.paymentId}`,
+    customer_email: payload?.user?.email,
+
+    success_url: `${config.SERVER_URL}/payments/confirm-payment?sessionId={CHECKOUT_SESSION_ID}&paymentId=${payload?.paymentId}&next=${clientNextUrl}`,
 
     cancel_url: `${config?.client_Url}${config?.cancel_url}`,
 
@@ -55,5 +60,6 @@ export const createCheckoutSession = async (payload: IPayload) => {
     // payment_method_types: ['card', 'amazon_pay', 'cashapp', 'us_bank_account'],
     payment_method_types: ['card'], //, 'paypal'
   });
+
   return paymentGatewayData;
 };

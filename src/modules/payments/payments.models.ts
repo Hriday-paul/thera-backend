@@ -9,9 +9,9 @@ const PaymentSchema = new Schema<IPayment>(
       ref: 'users',
       required: true,
     },
-    order: {
+    package: {
       type: Schema.Types.ObjectId,
-      ref: 'subscriptions',
+      ref: 'packages',
       required: true,
     },
     total_amount: {
@@ -31,6 +31,8 @@ const PaymentSchema = new Schema<IPayment>(
       type: String,
       required: true,
     },
+    startedAt: { type: Date, default: new Date() },
+    expiredAt: { type: Date, default: new Date() },
   },
   {
     timestamps: true,

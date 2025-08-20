@@ -4,13 +4,40 @@ import { INotification } from "./notification.inerface";
 import Notification from "./notification.model";
 import QueryBuilder from "../../builder/QueryBuilder";
 
-const getNotificationFromDb = async (receiverId : string, query: Record<string, any>) => {
-  const result = new QueryBuilder(Notification.find({ receiver : receiverId }), query)
+const getNotificationFromDb = async (receiverId: string, query: Record<string, any>) => {
+  const result = new QueryBuilder(Notification.find({ receiver: receiverId }), query)
     .search(["title", "message"])
-    .sort();
+    .sort()
 
   const data: any = await result.modelQuery;
   return data;
+};
+const getNotificationByDateGroup = async (receiverId: string, query: Record<string, any>) => {
+  const searchTerm = query?.searchTerm || "";
+  const regex = new RegExp(searchTerm, "i");
+
+  const notifications = await Notification.aggregate([
+    {
+      $match: {
+        receiver: new Types.ObjectId(receiverId),
+        $or: [
+          { title: regex },
+          { message: regex }
+        ]
+      }
+    },
+    {
+      $group: {
+        _id: {
+          $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }
+        },
+        notifications: { $push: "$$ROOT" }
+      }
+    },
+    { $sort: { createdAt: -1 } }
+  ]);
+
+  return notifications;
 };
 
 const updateNotification = async (
@@ -51,7 +78,7 @@ const unreadNotificationCount = async (id: string) => {
 };
 
 const deleteNotification = async (id: string) => {
-  const result = await Notification.deleteOne({ _id : id });
+  const result = await Notification.deleteOne({ _id: id });
   return result;
 };
 
@@ -61,5 +88,6 @@ export const notificationServices = {
   makeMeRead,
   makeReadAll,
   unreadNotificationCount,
-  deleteNotification
+  deleteNotification,
+  getNotificationByDateGroup
 };

@@ -10,6 +10,11 @@ router.get(
    auth(USER_ROLE.admin, USER_ROLE.staf, USER_ROLE.patient, USER_ROLE.company),
   notificationController.getAllNotification
 );
+router.get(
+  "/activities",
+   auth(USER_ROLE.admin, USER_ROLE.staf, USER_ROLE.patient, USER_ROLE.company),
+  notificationController.getNotificationByDateGroup
+);
 
 router.put(
   "/make-read/:id",

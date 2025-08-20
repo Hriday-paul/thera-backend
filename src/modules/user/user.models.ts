@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { IAutomation, IBilling, ICompany, IContact, IFamilyGroup, IMsgTemplate, InsuranceType, IOrgLocation, IPatient, IPerson, IReminder, IService, IStaf, IUser } from './user.interface';
+import { IAutomation, IBilling, ICompany, IContact, IFamilyGroup, IMsgTemplate, InsuranceType, IOrgLocation, IPatient, Ipatienttag, IPerson, IReminder, IService, IStaf, IUser } from './user.interface';
 
 const OrgLocationSchema = new Schema<IOrgLocation>({
   state: { type: String },
@@ -76,6 +76,10 @@ const AutomationsSchema: Schema<IAutomation> = new Schema({
   },
 }, { _id: false });
 
+const patienttagSchema = new Schema<Ipatienttag>({
+  name: { type: String, required: true },
+})
+
 const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
   {
     // title: { type: String, required: true },
@@ -126,7 +130,8 @@ const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
       }]
     },
 
-    msg_templates: { type: MsgTemplateSchema }
+    msg_templates: { type: MsgTemplateSchema },
+    patient_tags: { type: [patienttagSchema] }
 
   }
 );

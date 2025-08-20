@@ -62,6 +62,9 @@ export const createAccountValidator = [
     check('cfr_part2')
         .optional()
         .isBoolean().withMessage('CFR Part 2 must be boolean'),
+
+    check('package')
+        .notEmpty().withMessage('package is required').isMongoId().withMessage("invalid package id"),
 ]
 
 export const loginAccountValidator = [

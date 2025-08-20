@@ -11,9 +11,10 @@ import { generateOtp } from "../../utils/otpGenerator"
 import moment from "moment"
 import { sendEmail } from "../../utils/mailSender"
 import { Company, User } from "../user/user.models"
+import { paymentsService } from "../payments/payments.service"
 
 
-const createUser = async (payload: IICompany) => {
+const createUser = async (payload: IICompany, packag: string) => {
 
     const { name, email, password = '', organization_name, site_short_name, legal_organization_name, business_type, company_type, tax_type, tax_id, organization_liscence, organization_npi = "", facility_npi = '', diagnostic_code, pregnancy_related_services = false, track_pqrs_measure = false, cfr_part2 = false } = payload
 
@@ -59,11 +60,13 @@ const createUser = async (payload: IICompany) => {
         throw new AppError(httpStatus.BAD_REQUEST, 'Account creation failed');
     }
 
-    return user;
+    const link = await paymentsService.checkout(packag, user?._id as unknown as string, "/auth/verify-otp")
+
+    return {user, link};
 };
 
 // Login
-const loginUser = async (payload: { email: string, password: string }) => {
+const loginUser = async (payload: { email: string, password: string, fcmToken?: string, }) => {
 
     const user: IUser | null = await User.findOne({ email: payload?.email, role: { $nin: ['5', '6'] } });
 
@@ -91,6 +94,17 @@ const loginUser = async (payload: { email: string, password: string }) => {
             throw new AppError(httpStatus.BAD_REQUEST, 'Please check your credentials and try again');
         }
 
+    }
+
+    // Update FCM token if provided
+    let updatedUser = user;
+
+    if (payload?.fcmToken) {
+        updatedUser = await User.findOneAndUpdate(
+            { email: payload.email },
+            { fcmToken: payload.fcmToken },
+            { new: true }
+        ) as IUser;
     }
 
     const jwtPayload: { userId: string; role: string } = {

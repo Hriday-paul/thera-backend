@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import AppError from "../../../error/AppError";
-import { IICompany, IMsgTemplate, IOrgLocation, IService } from "../user.interface";
+import { IICompany, IMsgTemplate, IOrgLocation, Ipatienttag, IService } from "../user.interface";
 import { Company, User } from "../user.models";
 import httpStatus from "http-status"
 
@@ -318,6 +318,79 @@ const deleteLocation = async (userId: string, locationId: string) => {
     return res;
 };
 
+
+const addPatientTag = async (companyId: string, payload: IService) => {
+
+    const user = await User.findOne({ _id: companyId, role: "company" }).select("company");
+
+    if (!user?.company) throw new AppError(httpStatus.NOT_FOUND, "Company not found");
+
+    const res = await Company.updateOne(
+        { _id: user?.company },
+        {
+            $push: {
+                patient_tags: payload
+            }
+        }
+    );
+
+    return res;
+}
+
+const editpatienttags = async (userId: string, tagId: string, payload: Ipatienttag) => {
+
+    const exist = await User.findOne({ _id: userId, role: "company" }).select("company");
+
+    if (!exist?.company) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    }
+
+    const companyid = exist?.company;
+
+    const res = await Company.updateOne(
+        {
+            _id: companyid,
+            "patient_tags._id": tagId,
+        },
+        {
+            $set: {
+                "locations.$.name": payload?.name,
+
+            },
+        }
+    );
+
+    return res;
+}
+
+const deletepatienttags = async (userId: string, tagId: string) => {
+
+    const exist = await User.findOne({ _id: userId, role: "company" }).select("company");
+
+    if (!exist?.company) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    }
+
+    const companyid = exist?.company;
+
+    const res = await Company.updateOne(
+        { _id: companyid },
+        {
+            $pull: {
+                "patient_tags": { _id: tagId },
+            },
+        }
+    );
+
+    return res;
+};
+
 export const companyService = {
     addCompanyLocation,
     myProfile,
@@ -330,5 +403,9 @@ export const companyService = {
     editLocation,
     deleteLocation,
     updateCompanyAutomation,
-    updateCompanyReminderMessage
+    updateCompanyReminderMessage,
+
+    editpatienttags,
+    deletepatienttags,
+    addPatientTag
 }

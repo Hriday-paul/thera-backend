@@ -47,7 +47,6 @@ router.get(
     companyControler.locations,
 );
 
-
 router.post(
     '/location',
     auth(USER_ROLE.company),
@@ -62,6 +61,22 @@ router.delete(
     '/locations/:id',
     auth(USER_ROLE.company),
     companyControler.deleteLocation,
+);
+
+router.post(
+    '/patient-tag',
+    auth(USER_ROLE.company),
+    companyControler.addPatientTag,
+);
+router.put(
+    '/patient-tag/:id',
+    auth(USER_ROLE.company),
+    companyControler.editpatienttags,
+);
+router.delete(
+    '/patient-tag/:id',
+    auth(USER_ROLE.company),
+    companyControler.deletepatienttags,
 );
 
 router.patch(

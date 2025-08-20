@@ -92,6 +92,10 @@ export interface IMsgTemplate {
   }
 }
 
+export interface Ipatienttag{
+  name : string
+}
+
 export interface ICompany {
   // title: string,
   // full_name: string,
@@ -147,7 +151,9 @@ export interface ICompany {
   automations: IAutomation,
 
   reminderTypes: IReminder[],
-  msg_templates: IMsgTemplate
+  msg_templates: IMsgTemplate,
+
+  patient_tags : Ipatienttag[]
 }
 
 

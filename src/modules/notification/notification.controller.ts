@@ -19,6 +19,18 @@ const getAllNotification = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getNotificationByDateGroup = catchAsync(async (req: Request, res: Response) => {
+  // const query = { ...req.query };
+  // query["receiver"] = req.user._id;
+  const result = await notificationServices.getNotificationByDateGroup(req?.user?._id, req.query);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Notifications retrived successfully",
+    data: result,
+  });
+});
+
 const makeRead = catchAsync(async (req: Request, res: Response) => {
 
   const id = req.params.id;
@@ -87,6 +99,7 @@ const deleteNotification = catchAsync(async (req: Request, res: Response) => {
 
 export const notificationController = {
   getAllNotification,
+  getNotificationByDateGroup,
   makeRead,
   makeReadAll,
   unreadNotificationCount,

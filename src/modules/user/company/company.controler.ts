@@ -140,6 +140,39 @@ const deleteLocation = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const addPatientTag = catchAsync(async (req: Request, res: Response) => {
+    const result = await companyService.addPatientTag(req?.user?._id, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Tag added to your company',
+        data: result,
+    });
+});
+
+const editpatienttags = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await companyService.editpatienttags(req?.user?._id, req?.params?.id, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Tag updated successfully',
+        data: result,
+    });
+});
+
+const deletepatienttags = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await companyService.deletepatienttags(req?.user?._id, req?.params?.id);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Tag deleted successfully',
+        data: result,
+    });
+});
+
 export const companyControler = {
     addCompanyLocation,
     myProfile,
@@ -152,5 +185,8 @@ export const companyControler = {
     editLocation,
     deleteLocation,
     updateCompanyAutomation,
-    updateCompanyReminderMessage
+    updateCompanyReminderMessage,
+    addPatientTag,
+    editpatienttags,
+    deletepatienttags
 }

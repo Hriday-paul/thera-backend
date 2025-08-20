@@ -7,9 +7,9 @@ import { otpServices } from "../otp/otp.service";
 import catchAsync from "../../utils/catchAsync";
 
 //create company
-const createUser = catchAsync(async (req: Request<{}, {}, IICompany>, res: Response) => {
+const createUser = catchAsync(async (req: Request, res: Response) => {
 
-    const result = await authService.createUser(req.body);
+    const { user: result, link } = await authService.createUser(req.body, req.body?.package);
 
     let otptoken;
 
@@ -21,7 +21,7 @@ const createUser = catchAsync(async (req: Request<{}, {}, IICompany>, res: Respo
         statusCode: httpStatus.OK,
         success: true,
         message: 'Account created successfully',
-        data: { user: result, otpToken: otptoken },
+        data: { user: result, otpToken: otptoken, paymentLink: link },
     });
 })
 

@@ -1,20 +1,19 @@
-import express, { NextFunction, Request, Response } from 'express';
+import express from 'express';
 import { authRouts } from './modules/auth/auth.rout';
 import { userRoutes } from './modules/user/user.rout';
 import { contactRoutes } from './modules/contact/contact.route';
-
 import { dashboardRouts } from './modules/dasboard/dashboard.rout';
-import { gameRoutes } from './modules/games/games.rout';
-import { blogRoutes } from './modules/blog/blog.rout';
 import { settingsRoutes } from './modules/settings/settings.rout';
-import { productRoutes } from './modules/products/products.route';
-import { orderRoutes } from './modules/order/order.route';
 import { paymentsRoutes } from './modules/payments/payments.route';
 import { CaseFileRouts } from './modules/case_files/case_files.route';
 import { AppoinmentRouts } from './modules/appoinments/appoinments.route';
 import { chatRoutes } from './modules/chat/chat.route';
 import { messagesRoutes } from './modules/messages/messages.route';
 import { notificationRoute } from './modules/notification/notification.routes';
+import { TaskRouts } from './modules/task/task.route';
+import { SubtaskRout } from './modules/subtask/sabtask.rout';
+import { TaskOccurenece } from './modules/task_occurece/task_occurence.route';
+import { packageRouts } from './modules/package/package.rout';
 
 
 const router = express.Router();
@@ -37,24 +36,8 @@ const moduleRoutes = [
         route: dashboardRouts,
     },
     {
-        path: '/games',
-        route: gameRoutes,
-    },
-    {
-        path: '/blogs',
-        route: blogRoutes,
-    },
-    {
-        path: '/products',
-        route: productRoutes,
-    },
-    {
         path: '/setting',
         route: settingsRoutes,
-    },
-    {
-        path: '/orders',
-        route: orderRoutes,
     },
     {
         path: '/payments',
@@ -79,6 +62,22 @@ const moduleRoutes = [
     {
         path: '/messages',
         route: messagesRoutes,
+    },
+    {
+        path: '/tasks',
+        route: TaskRouts,
+    },
+    {
+        path: '/subtask',
+        route: SubtaskRout,
+    },
+    {
+        path: '/task-occurences',
+        route: TaskOccurenece,
+    },
+    {
+        path: '/packages',
+        route: packageRouts,
     },
 
 ];
