@@ -116,6 +116,18 @@ const getMonthlyAppointmentStats = catchAsync(async (req: Request, res: Response
     });
 })
 
+const appoinmentChart = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await appoinmentsService.appoinmentChart(req?.user?._id, req?.query);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Appoinment chart data retrived successfully',
+        data: result,
+    });
+})
+
 export const appoinmentControler = {
     createAppointment,
     getFreeStaff,
@@ -124,5 +136,6 @@ export const appoinmentControler = {
     updateStatusOccurence,
     allAppoinments_By_patient,
     allAppoinments_By_staff,
-    getMonthlyAppointmentStats
+    getMonthlyAppointmentStats,
+    appoinmentChart
 }

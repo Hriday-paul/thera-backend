@@ -52,4 +52,10 @@ router.get(
     appoinmentControler.getMonthlyAppointmentStats,
 );
 
+router.get(
+    '/chart-data',
+    auth(USER_ROLE.company),
+    appoinmentControler.appoinmentChart,
+);
+
 export const AppoinmentRouts = router;

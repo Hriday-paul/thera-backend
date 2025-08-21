@@ -97,4 +97,26 @@ router.patch(
     companyControler.updateCompanyReminderMessage,
 );
 
+router.get(
+    '/reports/user-count',
+    auth(USER_ROLE.company),
+    companyControler.reportUserCount,
+);
+router.get(
+    '/reports/key-performance',
+    auth(USER_ROLE.company),
+    companyControler.reportKeyPerformance,
+);
+
+router.get(
+    '/reports/gender-stats',
+    auth(USER_ROLE.company),
+    companyControler.gender_stats,
+);
+router.get(
+    '/reports/age-stats',
+    auth(USER_ROLE.company),
+    companyControler.age_stats,
+);
+
 export const CompanyRouts = router;

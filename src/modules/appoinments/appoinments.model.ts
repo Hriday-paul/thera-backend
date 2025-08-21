@@ -31,6 +31,7 @@ const appointmentOccurrenceSchema = new mongoose.Schema<IOccurrencce>({
     end_datetime: { type: Date },
     staff_ids: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }],
     patient_id: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
+    company_id: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
     location : {type : LocationSchema},
     status: {
         type: String,

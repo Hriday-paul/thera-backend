@@ -1,9 +1,10 @@
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import AppError from "../../../error/AppError";
 import { IBilling, IContact, IFamilyGroup, IIPatient, InsuranceType } from "../user.interface";
 import { Patient, User } from "../user.models"
 import httpStatus from "http-status"
 import { AppointmentOccurrence } from "../../appoinments/appoinments.model";
+import { Invoices } from "../../invoices/invoices.models";
 
 const patientprofile = async (patientId: string) => {
     const res = await User.findOne({ _id: patientId, role: "patient" }).select("-password").populate({
@@ -549,6 +550,38 @@ const deleteInsurance = async (userId: string, insurancId: string) => {
     return res;
 };
 
+const patientStats = async (patientId: string) => {
+
+    const total_completed_amount = await Invoices.aggregate([
+        { $match: { patient: new mongoose.Types.ObjectId(patientId), status: "complete" } },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: "$total_amount" }
+            }
+        }
+    ]);
+
+    const total_due_amount = await Invoices.aggregate([
+        { $match: { patient: new mongoose.Types.ObjectId(patientId), status: "pending" } },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: "$total_amount" }
+            }
+        }
+    ]);
+
+    const total = total_completed_amount[0]?.total || 0;
+    const due = total_due_amount[0]?.total || 0;
+
+    const completInvoiceCount = await Invoices.countDocuments({ patient: patientId, status: "complete" });
+    const openInvoiceCount = await Invoices.countDocuments({ patient: patientId, status: "pending" });
+
+
+    return { total, due, openInvoice: openInvoiceCount, completeInvoice: completInvoiceCount };
+};
+
 export const PatientService = {
     patientprofile,
     updatePatient,
@@ -567,5 +600,6 @@ export const PatientService = {
     addInsurance,
     editInsurance,
     deleteInsurance,
-    patientsListsWithAppoinmentHistory
+    patientsListsWithAppoinmentHistory,
+    patientStats
 }

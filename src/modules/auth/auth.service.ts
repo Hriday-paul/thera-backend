@@ -60,7 +60,7 @@ const createUser = async (payload: IICompany, packag: string) => {
         throw new AppError(httpStatus.BAD_REQUEST, 'Account creation failed');
     }
 
-    const link = await paymentsService.checkout(packag, user?._id as unknown as string, "/auth/verify-otp")
+    const link = await paymentsService.checkout(packag, user?._id as unknown as string, "/auth/verify-otp?next=/auth/login")
 
     return {user, link};
 };

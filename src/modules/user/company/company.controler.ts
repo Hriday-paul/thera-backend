@@ -172,6 +172,51 @@ const deletepatienttags = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
+const reportUserCount = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await companyService.reportUserCount(req?.user?._id);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Report retrived successfully',
+        data: result,
+    });
+});
+const reportKeyPerformance = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await companyService.reportKeyPerformance(req?.user?._id, req?.query);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Report retrived successfully',
+        data: result,
+    });
+});
+const gender_stats = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await companyService.gendersCountForCompany(req?.user?._id);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Report retrived successfully',
+        data: result,
+    });
+});
+
+const age_stats = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await companyService.ageGroupsForCompany(req?.user?._id);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Report retrived successfully',
+        data: result,
+    });
+});
 
 export const companyControler = {
     addCompanyLocation,
@@ -188,5 +233,10 @@ export const companyControler = {
     updateCompanyReminderMessage,
     addPatientTag,
     editpatienttags,
-    deletepatienttags
+    deletepatienttags,
+    reportUserCount,
+    reportKeyPerformance,
+
+    age_stats,
+    gender_stats
 }

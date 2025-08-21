@@ -200,6 +200,16 @@ const deleteInsurance = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const patientStats = catchAsync(async (req: Request, res: Response) => {
+    const result = await PatientService.patientStats(req?.params?.id);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Patient stat retrived successfully',
+        data: result,
+    });
+});
+
 export const PatientController = {
     patientprofile,
     updatePatient,
@@ -218,5 +228,6 @@ export const PatientController = {
     editBillingDetails,
     addInsurance,
     editInsurance,
-    deleteInsurance
+    deleteInsurance,
+    patientStats
 }

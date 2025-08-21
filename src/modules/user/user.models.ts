@@ -12,7 +12,7 @@ const OrgLocationSchema = new Schema<IOrgLocation>({
   rooms: [{ type: String }]
 });
 
-const SeviceSchema = new Schema<IService>({
+export const SeviceSchema = new Schema<IService>({
   service_category: { type: String },
   service_code: { type: String },
   service_offered: { type: String },
@@ -202,7 +202,7 @@ const contactSchema: Schema<IContact> = new Schema<IContact>({
   relation: { type: String, required: true },
 });
 
-const insuranceSchema: Schema<InsuranceType> = new Schema<InsuranceType>({
+export const insuranceSchema: Schema<InsuranceType> = new Schema<InsuranceType>({
   insurance_provider: { type: String },
   plan_type: { Type: String },
   therapy_type: { type: String },

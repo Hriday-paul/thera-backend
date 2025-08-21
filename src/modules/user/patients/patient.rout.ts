@@ -35,6 +35,12 @@ router.get(
     PatientController.patientsListsWithAppoinmentHistory,
 );
 
+router.get(
+    '/stats/:id',
+    auth(USER_ROLE.company),
+    PatientController.patientStats,
+);
+
 router.patch(
     '/family-group/:id',
     addPatientfamilyGroupValidator,

@@ -6,7 +6,7 @@ import moment from "moment";
 import { IAppoinment, IOccurrencce, IStaffUnavilibility } from "./appoinments.interface";
 import { Appointment, AppointmentOccurrence, StaffUnavailability } from "./appoinments.model";
 import httpStatus from "http-status";
-import mongoose, { Types } from "mongoose";
+import mongoose, { ObjectId, Types } from "mongoose";
 import { sendNotification } from "../notification/notification.utils";
 import { INotification } from "../notification/notification.inerface";
 
@@ -17,7 +17,7 @@ interface IIApoinment extends IAppoinment {
   }
 }
 
-const generateOccurrences = async (appointment: IIApoinment): Promise<IOccurrencce[]> => {
+const generateOccurrences = async (appointment: IIApoinment, companyId: ObjectId): Promise<IOccurrencce[]> => {
   const {
     _id: appointmentId,
     start_date,
@@ -91,7 +91,8 @@ const generateOccurrences = async (appointment: IIApoinment): Promise<IOccurrenc
       staff_ids,
       location,
       status: "upcoming",
-      patient_id
+      patient_id,
+      company_id: companyId
     });
   }
 
@@ -104,7 +105,7 @@ const createAppointment = async (companyId: string, payload: IIApoinment) => {
 
   const appointment = appoin.toObject();
 
-  const occurrences = await generateOccurrences({ ...appointment, location: payload?.location });
+  const occurrences = await generateOccurrences({ ...appointment, location: payload?.location }, companyId as unknown as ObjectId);
 
   await AppointmentOccurrence.insertMany(occurrences);
 
@@ -294,6 +295,22 @@ const allAppointments_byCompany_WithStaffStatus = async (companyId: string) => {
     },
     { $unwind: '$appointment' },
     {
+      $lookup: {
+        from: 'users',
+        localField: 'patient_id',
+        foreignField: '_id',
+        as: 'patient',
+        pipeline: [
+          {
+            $project: {
+              password: 0 // X exclude password
+            }
+          }
+        ]
+      }
+    },
+    { $unwind: '$patient' },
+    {
       $match: {
         'appointment.company_id': new Types.ObjectId(companyId)
       }
@@ -347,6 +364,7 @@ const allAppointments_byCompany_WithStaffStatus = async (companyId: string) => {
         end: { $first: '$end_datetime' },
         status: { $first: '$status' },
         appointment: { $first: '$appointment' },
+        patient: { $first: '$patient' },
         location: { $first: '$location' },
         staff_ids: {
           $push: {
@@ -361,7 +379,7 @@ const allAppointments_byCompany_WithStaffStatus = async (companyId: string) => {
 
     },
     {
-      $sort: { date: 1 }
+      $sort: { start: 1 }
     }
   ]);
 
@@ -452,7 +470,7 @@ const getMonthlyAppointmentStats = async (query: Record<string, any>): Promise<A
 
 
 
-const updateAppointment = async (id: string, payload: IIApoinment) => {
+const updateAppointment = async (id: string, payload: IIApoinment, companyId: string) => {
   const appointment = await Appointment.findByIdAndUpdate(id, payload, { new: true });
 
   if (!appointment) {
@@ -474,7 +492,7 @@ const updateAppointment = async (id: string, payload: IIApoinment) => {
     _id: { $nin: completedIds }
   });
 
-  const newOccurrences = await generateOccurrences({ ...appointment, location: payload?.location }); // add await
+  const newOccurrences = await generateOccurrences({ ...appointment, location: payload?.location }, companyId as unknown as ObjectId);
   await AppointmentOccurrence.insertMany(newOccurrences);
 
 
@@ -527,6 +545,59 @@ const sendNotificationReminder = async (occurenceId: string, userId: string) => 
 
 }
 
+
+const appoinmentChart = async (company_id: string, query: Record<string, any>) => {
+  const userYear = query?.year ?? moment().year();
+  const startOfUserYear = moment().year(userYear).startOf('year');
+  const endOfUserYear = moment().year(userYear).endOf('year');
+
+  const occurrences = await AppointmentOccurrence.aggregate([
+    {
+      $match: {
+        company_id: new Types.ObjectId(company_id),
+        status: { $in: ["upcoming", "completed", "cancelled", "no_show"] },
+        createdAt: {
+          $gte: startOfUserYear.toDate(),
+          $lte: endOfUserYear.toDate(),
+        },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          month: { $month: "$createdAt" },
+          status: "$status",
+        },
+        total: { $sum: 1 },
+      },
+    },
+    { $sort: { "_id.month": 1 } },
+  ]);
+
+  // Prepare base structure: 12 months × 4 statuses
+  const statuses = ["upcoming", "completed", "cancelled", "no_show"];
+  const formatted = statuses.map(status => ({
+    name: status,
+    data: Array(12).fill(0),
+  }));
+
+  // Fill results into structure
+  occurrences.forEach(entry => {
+    const monthIndex = entry._id.month - 1; // 0-based
+    const status = entry._id.status;
+    const statusObj = formatted.find(s => s.name === status);
+    if (statusObj) {
+      statusObj.data[monthIndex] = entry.total;
+    }
+  });
+
+  const totalAppoinment = await AppointmentOccurrence.countDocuments({ company_id: new Types.ObjectId(company_id) })
+
+  return { data: formatted, total: totalAppoinment };
+};
+
+
+
 export const appoinmentsService = {
   createAppointment,
   updateStatusOccurence,
@@ -537,5 +608,6 @@ export const appoinmentsService = {
   sendNotificationReminder,
   allAppoinments_By_patient,
   allAppoinments_By_staff,
-  getMonthlyAppointmentStats
+  getMonthlyAppointmentStats,
+  appoinmentChart
 }

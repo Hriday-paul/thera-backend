@@ -14,6 +14,8 @@ import { TaskRouts } from './modules/task/task.route';
 import { SubtaskRout } from './modules/subtask/sabtask.rout';
 import { TaskOccurenece } from './modules/task_occurece/task_occurence.route';
 import { packageRouts } from './modules/package/package.rout';
+import { Active_pack_router } from './modules/active_package/active_package.route';
+import { invoicesRoutes } from './modules/invoices/invoices.route';
 
 
 const router = express.Router();
@@ -78,6 +80,14 @@ const moduleRoutes = [
     {
         path: '/packages',
         route: packageRouts,
+    },
+    {
+        path: '/active-pack',
+        route: Active_pack_router,
+    },
+    {
+        path: '/invoices',
+        route: invoicesRoutes,
     },
 
 ];

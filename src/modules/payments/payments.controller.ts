@@ -48,17 +48,8 @@ const getPaymentsByUserId = catchAsync(async (req: Request, res: Response) => {
   // });
 });
 
-const getPaymentsByUserIdWithParams = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const result = await paymentsService.getPaymentsByUserId(id, req.query);
-  // if (!result) {
-  //   return sendResponse(res, {
-  //     success: false,
-  //     statusCode: httpStatus.NOT_FOUND,
-  //     message: 'Payment not found',
-  //     data: {},
-  //   });
-  // }
+const myPayments = catchAsync(async (req: Request, res: Response) => {
+  const result = await paymentsService.getPaymentsByUserId(req?.user?._id);
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
@@ -152,7 +143,7 @@ export const paymentsController = {
   deletePayments,
   confirmPayment,
   getPaymentsByUserId,
-  getPaymentsByUserIdWithParams,
+  myPayments,
   checkout,
   paymentAmount
 };

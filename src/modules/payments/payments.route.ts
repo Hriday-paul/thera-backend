@@ -18,9 +18,9 @@ router.post('/checkout', checkoutValidator, req_validator(), auth(USER_ROLE.user
 router.get('/amount', auth(USER_ROLE.admin), paymentsController.paymentAmount);
 
 router.get(
-  '/paymentbyuserId/:id',
-  auth(USER_ROLE.admin),
-  paymentsController.getPaymentsByUserIdWithParams,
+  '/my-payment',
+  auth(USER_ROLE.company),
+  paymentsController.myPayments,
 );
 
 router.get('/confirm-payment', paymentsController.confirmPayment);

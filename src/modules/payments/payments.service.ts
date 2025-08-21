@@ -21,7 +21,7 @@ const stripe = new Stripe(config.stripe?.stripe_api_secret as string, {
 });
 
 //-----------------create acheck out url---------------------
-const checkout = async (packageId: string, userId: string, clientNextUrl : string) => {
+const checkout = async (packageId: string, userId: string, clientNextUrl: string) => {
   const tranId = generateRandomString(10);
 
   const foundPackage: IPackage | null = await Package.findById(
@@ -64,7 +64,7 @@ const checkout = async (packageId: string, userId: string, clientNextUrl : strin
     //@ts-ignore
     paymentId: paymentData?._id,
 
-  },clientNextUrl );
+  }, clientNextUrl);
 
   return checkoutSession?.url;
 
@@ -167,31 +167,10 @@ const getAllPayments = async (query: Record<string, any>) => {
 
 const getPaymentsByUserId = async (
   userId: string,
-  query: Record<string, any>,
 ) => {
-  // const paymentQueryBuilder = new QueryBuilder(
-  //   Payment.find({ user: userId, isPaid: true }).populate({
-  //     path: 'subscription',
-  //     populate: { path: 'package' },
-  //   }).populate('user'),
-  //   query,
-  // )
-  //   .search(['paymentStatus', 'transactionId', 'subscription.name'])
-  //   .filter()
-  //   .paginate()
-  //   .sort();
+  const data = Payment.find({ user: userId, isPaid: true }).populate({ path: 'package' })
 
-  // const data: any = await paymentQueryBuilder.modelQuery;
-  // const meta = await paymentQueryBuilder.countTotal();
-
-  // // if (!data || data.length === 0) {
-  // //   throw new AppError(httpStatus.NOT_FOUND, 'No payments found for the user');
-  // // }
-
-  // return {
-  //   data,
-  //   meta,
-  // };
+  return data;
 };
 
 // Get a payment by ID

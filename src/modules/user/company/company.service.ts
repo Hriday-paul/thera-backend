@@ -1,8 +1,11 @@
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import AppError from "../../../error/AppError";
 import { IICompany, IMsgTemplate, IOrgLocation, Ipatienttag, IService } from "../user.interface";
 import { Company, User } from "../user.models";
 import httpStatus from "http-status"
+import { CaseFiles } from "../../case_files/case_files.model";
+import { Invoices } from "../../invoices/invoices.models";
+import moment from "moment";
 
 const addCompanyLocation = async (userId: string, payload: IOrgLocation) => {
 
@@ -391,6 +394,222 @@ const deletepatienttags = async (userId: string, tagId: string) => {
     return res;
 };
 
+// ------------------reports api--------------
+const reportUserCount = async (companyId: string) => {
+
+    const active_staff = await User.countDocuments({ staf_company_id: companyId, role: "staf", isDisable: false, isDeleted: false })
+    const active_patient = await User.countDocuments({ patient_company_id: companyId, role: "patient", isDisable: false, isDeleted: false });
+
+    const archived_staff = await User.countDocuments({ staf_company_id: companyId, role: "staf", isDisable: true, isDeleted: false })
+    const archived_patient = await User.countDocuments({ patient_company_id: companyId, role: "patient", isDisable: true, isDeleted: false });
+
+    const open_case_file = await CaseFiles.countDocuments({ companyId: new Types.ObjectId(companyId), isClosed: false });
+    const close_case_file = await CaseFiles.countDocuments({ companyId: new Types.ObjectId(companyId), isClosed: true });
+
+    return { staff: { active: active_staff, archived: archived_staff }, patient: { active: active_patient, archived: archived_patient }, case_file: { open: open_case_file, close: close_case_file } };
+};
+
+const reportKeyPerformance = async (companyId: string, query: Record<string, any>) => {
+
+    const year = query?.year ?? moment().year();
+    const startOfUserYear = moment().year(year).startOf('year');
+    const endOfUserYear = moment().year(year).endOf('year');
+
+    const total_completed_amount = await Invoices.aggregate([
+        {
+            $match: {
+                company: new mongoose.Types.ObjectId(companyId),
+                status: "complete",
+                createdAt: {
+                    $gte: startOfUserYear.toDate(),
+                    $lte: endOfUserYear.toDate(),
+                },
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: "$total_amount" }
+            }
+        }
+    ]);
+
+    const total_due_amount = await Invoices.aggregate([
+        {
+            $match: {
+                company: new mongoose.Types.ObjectId(companyId),
+                status: "pending",
+                createdAt: {
+                    $gte: startOfUserYear.toDate(),
+                    $lte: endOfUserYear.toDate(),
+                },
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: "$total_amount" }
+            }
+        }
+    ]);
+
+    const total = total_completed_amount[0]?.total || 0;
+    const due = total_due_amount[0]?.total || 0;
+
+    return { total, due };
+};
+
+const gendersCountForCompany = async (companyId: string) => {
+
+    const genderStats = await User.aggregate([
+        {
+            $match: {
+                patient_company_id: new Types.ObjectId(companyId),
+                role: "patient",
+            },
+        },
+        {
+            $lookup: {
+                from: "patients", // 👈 collection name for Patient model
+                localField: "patient",
+                foreignField: "_id",
+                as: "patient",
+            },
+        },
+        { $unwind: "$patient" },
+        {
+            $group: {
+                _id: "$patient.gender",
+                count: { $sum: 1 },
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: "$count" },
+                genders: { $push: { gender: "$_id", count: "$count" } },
+            },
+        },
+        {
+            $project: {
+                _id: 0,
+                genders: {
+                    $map: {
+                        input: "$genders",
+                        as: "g",
+                        in: {
+                            gender: "$$g.gender",
+                            percentage: {
+                                $round: [
+                                    { $multiply: [{ $divide: ["$$g.count", "$total"] }, 100] },
+                                    2,
+                                ],
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    ])
+
+    return genderStats;
+
+};
+
+const ageGroupsForCompany = async (companyId: string) => {
+    const results = await User.aggregate([
+        {
+            $match: {
+                patient_company_id: new Types.ObjectId(companyId),
+                role: "patient",
+            },
+        },
+        {
+            $lookup: {
+                from: "patients", // your patient collection name
+                localField: "patient",
+                foreignField: "_id",
+                as: "patient",
+            },
+        },
+        { $unwind: "$patient" },
+
+        // ✅ calculate age
+        {
+            $addFields: {
+                age: {
+                    $dateDiff: {
+                        startDate: "$patient.date_of_birth",
+                        endDate: "$$NOW",
+                        unit: "year",
+                    },
+                },
+            },
+        },
+
+        // ✅ group into ranges
+        {
+            $bucket: {
+                groupBy: "$age",
+                boundaries: [0, 13, 18, 25, 35, 45, 55, 65, 200], // age ranges
+                default: "Unknown",
+                output: {
+                    count: { $sum: 1 },
+                },
+            },
+        },
+
+        // ✅ calculate total patients (for percentages)
+        {
+            $group: {
+                _id: null,
+                buckets: { $push: { range: "$_id", count: "$count" } },
+                total: { $sum: "$count" },
+            },
+        },
+
+        // ✅ reshape for frontend (with percentage)
+        {
+            $project: {
+                _id: 0,
+                ageGroups: {
+                    $map: {
+                        input: "$buckets",
+                        as: "b",
+                        in: {
+                            range: {
+                                $switch: {
+                                    branches: [
+                                        { case: { $eq: ["$$b.range", 0] }, then: "0-12" },
+                                        { case: { $eq: ["$$b.range", 13] }, then: "13-17" },
+                                        { case: { $eq: ["$$b.range", 18] }, then: "18-24" },
+                                        { case: { $eq: ["$$b.range", 25] }, then: "25-34" },
+                                        { case: { $eq: ["$$b.range", 35] }, then: "35-44" },
+                                        { case: { $eq: ["$$b.range", 45] }, then: "45-54" },
+                                        { case: { $eq: ["$$b.range", 55] }, then: "55-64" },
+                                        { case: { $eq: ["$$b.range", 65] }, then: "65+" },
+                                    ],
+                                    default: "Unknown",
+                                },
+                            },
+                            count: "$$b.count",
+                            percentage: {
+                                $round: [
+                                    { $multiply: [{ $divide: ["$$b.count", "$total"] }, 100] },
+                                    1,
+                                ],
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    ]);
+
+    return results[0]?.ageGroups || [];
+};
+
+
 export const companyService = {
     addCompanyLocation,
     myProfile,
@@ -407,5 +626,9 @@ export const companyService = {
 
     editpatienttags,
     deletepatienttags,
-    addPatientTag
+    addPatientTag,
+    reportUserCount,
+    reportKeyPerformance,
+    gendersCountForCompany,
+    ageGroupsForCompany
 }
