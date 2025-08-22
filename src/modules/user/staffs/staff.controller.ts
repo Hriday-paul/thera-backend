@@ -53,9 +53,27 @@ const updateStaff = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const updateMyStaffProfile = catchAsync(async (req: Request, res: Response) => {
+
+    let image;
+
+    image = req.file?.filename && (config.BASE_URL + '/images/' + req.file.filename);
+
+    req.body.image = image;
+
+    const result = await StaffService.updateStaff(req?.user?._id, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Staff profile updated successfully',
+        data: result,
+    });
+});
+
 export const StaffsController = {
     staffList,
     staffprofile,
     updateStaff,
-    myProfile
+    myProfile,
+    updateMyStaffProfile
 }

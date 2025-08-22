@@ -65,6 +65,16 @@ router.post(
 );
 
 router.put(
+    '/profile',
+    image_Upload.single('image'),
+    parseData(),
+    // addStaffValidator,
+    // req_validator(),
+    auth(USER_ROLE.staf),
+    StaffsController.updateMyStaffProfile,
+);
+
+router.put(
     '/:id',
     image_Upload.single('image'),
     parseData(),
@@ -73,6 +83,7 @@ router.put(
     auth(USER_ROLE.company),
     StaffsController.updateStaff,
 );
+
 
 router.get(
     '/:id',
