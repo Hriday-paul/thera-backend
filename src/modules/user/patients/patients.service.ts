@@ -90,6 +90,25 @@ export const patientsListsWithAppoinmentHistory = async (companyId: string, quer
                 ...disabledFilter,
             }
         },
+        // Lookup invoices first
+        {
+            $lookup: {
+                from: "invoices",
+                localField: "_id",
+                foreignField: "patient",
+                as: "invoices",
+                pipeline: [
+                    { $match: { status: "pending" } }
+                ]
+            }
+        },
+        // Calculate totalDueAmount here BEFORE any unwind for appointments
+        {
+            $addFields: {
+                totalDueAmount: { $sum: "$invoices.total_amount" }
+            }
+        },
+        // Now lookup appointments
         {
             $lookup: {
                 from: "appointments",
@@ -108,15 +127,6 @@ export const patientsListsWithAppoinmentHistory = async (companyId: string, quer
             }
         },
         { $unwind: { path: "$occurrences", preserveNullAndEmptyArrays: true } },
-
-        // Remove this $match:
-        // {
-        //   $match: {
-        //     "occurrences.status": { $ne: "cancelled" },
-        //     "occurrences.start_datetime": { $gt: now }
-        //   }
-        // },
-
         {
             $lookup: {
                 from: "patients",
@@ -124,10 +134,9 @@ export const patientsListsWithAppoinmentHistory = async (companyId: string, quer
                 foreignField: "_id",
                 as: "patient",
                 pipeline: [
-                    // Inside each appointment, lookup staff info
                     {
                         $lookup: {
-                            from: "users",         // assuming staffs are users
+                            from: "users",
                             localField: "assign_stafs",
                             foreignField: "_id",
                             as: "assign_stafs"
@@ -137,7 +146,6 @@ export const patientsListsWithAppoinmentHistory = async (companyId: string, quer
             }
         },
         { $unwind: { path: "$patient", preserveNullAndEmptyArrays: true } },
-
         {
             $group: {
                 _id: "$_id",
@@ -145,6 +153,7 @@ export const patientsListsWithAppoinmentHistory = async (companyId: string, quer
                 email: { $first: "$email" },
                 image: { $first: "$image" },
                 patient: { $first: "$patient" },
+                totalDueAmount: { $first: "$totalDueAmount" }, // use $first here
                 nextAppointmentDate: {
                     $min: {
                         $cond: [
@@ -175,12 +184,13 @@ export const patientsListsWithAppoinmentHistory = async (companyId: string, quer
                 patient: { assign_stafs: { name: 1, email: 1, image: 1 } },
                 nextAppointmentDate: 1,
                 totalCompletedAppointments: 1,
+                totalDueAmount: 1
             }
         },
-        // Add pagination stages:
         { $skip: skip },
         { $limit: limit }
     ]);
+
 
     const total = await User?.countDocuments({ role: "patient", patient_company_id: companyId })
 

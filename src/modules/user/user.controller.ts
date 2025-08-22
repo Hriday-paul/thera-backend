@@ -5,6 +5,9 @@ import { IIPatient, IIStaf, IUser } from "./user.interface";
 import sendResponse from "../../utils/sendResponse";
 import httpStatus from 'http-status'
 import config from "../../config";
+import { User } from "./user.models";
+import { Types } from "mongoose";
+import AppError from "../../error/AppError";
 
 //get all users
 const all_users = catchAsync(async (req: Request, res: Response) => {
@@ -92,6 +95,35 @@ const staffs = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+//as a staff get my company another staffs;
+const staf_CompanyStaffs = catchAsync(async (req: Request, res: Response) => {
+
+    const user = await User.findOne({ _id: new Types.ObjectId(req?.user?._id), role: "staf" });
+
+    if (!user) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'User not found',
+        );
+    }
+
+    if (!user?.staf_company_id) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    };
+
+    const result = await userService.staffs(user?.staf_company_id as unknown as string);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'my staffs fetched successfully',
+        data: result,
+    });
+});
+
 
 
 //create patient
@@ -124,5 +156,6 @@ export const userController = {
     all_users,
     add_new_staff,
     staffs,
+    staf_CompanyStaffs,
     add_new_Patient
 }

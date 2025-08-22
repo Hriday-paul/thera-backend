@@ -18,10 +18,23 @@ router.get(
     userController.staffs,
 );
 
+////as a staff get my company another staffs;
+router.get(
+    '/by-staf',
+    auth(USER_ROLE.staf),
+    userController.staf_CompanyStaffs,
+);
+
 router.get(
     '/list',
     auth(USER_ROLE.company),
     StaffsController.staffList,
+);
+
+router.get(
+    '/profile',
+    auth(USER_ROLE.staf),
+    StaffsController.myProfile,
 );
 
 router.get(
@@ -30,6 +43,14 @@ router.get(
     req_validator(),
     auth(USER_ROLE.company),
     appoinmentControler.getFreeStaff,
+);
+
+router.get(
+    '/free/by-staf',
+    getfreestaffValidator,
+    req_validator(),
+    auth(USER_ROLE.staf),
+    appoinmentControler.as_a_staff_getFreeStaffMyCompany,
 );
 
 

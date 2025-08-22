@@ -31,7 +31,7 @@ router.patch(
     '/change-password',
     changePasswordValidator,
     req_validator(),
-    auth(USER_ROLE.admin, USER_ROLE.user),
+    auth(USER_ROLE.admin, USER_ROLE.company, USER_ROLE.patient, USER_ROLE.staf),
     authController.changePassword,
 );
 

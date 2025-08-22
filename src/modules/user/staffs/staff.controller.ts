@@ -16,6 +16,16 @@ const staffList = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const myProfile = catchAsync(async (req: Request, res: Response) => {
+    const result = await StaffService.StaffProfile(req?.user?._id);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Your Staff profile retrived successfully',
+        data: result,
+    });
+});
+
 const staffprofile = catchAsync(async (req: Request, res: Response) => {
     const result = await StaffService.StaffProfile(req?.params?.id);
     sendResponse(res, {
@@ -47,4 +57,5 @@ export const StaffsController = {
     staffList,
     staffprofile,
     updateStaff,
+    myProfile
 }

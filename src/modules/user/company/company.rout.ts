@@ -14,31 +14,66 @@ router.get(
     auth(USER_ROLE.company),
     PatientController.allPatientsByCompany,
 );
+router.get(
+    '/patients/by-staf',
+    auth(USER_ROLE.staf),
+    PatientController.as_a_staf_allPatientsByCompany,
+);
 
 router.get(
     '/profile',
     auth(USER_ROLE.company),
     companyControler.myProfile,
 );
+
+router.get(
+    '/profile/by-staf',
+    auth(USER_ROLE.staf),
+    companyControler.asAStaffmyCompanyProfile,
+);
+
+
 router.get(
     '/services',
     auth(USER_ROLE.company),
     companyControler.services,
 );
+router.get(
+    '/services/by-staf',
+    auth(USER_ROLE.staf),
+    companyControler.servicesByStaff,
+);
+
 router.post(
     '/services',
     auth(USER_ROLE.company),
     companyControler.addNewService,
 );
+router.post(
+    '/services/by-staf',
+    auth(USER_ROLE.staf),
+    companyControler.addNewService_by_staff,
+);
+
 router.put(
     '/services/:id',
     auth(USER_ROLE.company),
     companyControler.editService,
 );
+router.put(
+    '/services-by-staf/:id',
+    auth(USER_ROLE.staf),
+    companyControler.editServiceByStaff,
+);
 router.delete(
     '/services/:id',
     auth(USER_ROLE.company),
     companyControler.deleteService,
+);
+router.delete(
+    '/services-by-staf/:id',
+    auth(USER_ROLE.staf),
+    companyControler.deleteService_byStaff,
 );
 
 router.get(
@@ -95,6 +130,11 @@ router.patch(
     '/reminder',
     auth(USER_ROLE.company),
     companyControler.updateCompanyReminderMessage,
+);
+router.patch(
+    '/reminder/by-staf',
+    auth(USER_ROLE.staf),
+    companyControler.updateCompanyReminderMessage_by_staff,
 );
 
 router.get(

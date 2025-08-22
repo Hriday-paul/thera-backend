@@ -10,7 +10,7 @@ import { TaskOcurenceControler } from "./task_occurence.controler";
 const router = Router();
 
 router.delete("/:id",
-    auth(USER_ROLE.company),
+    auth(USER_ROLE.company, USER_ROLE.staf),
     TaskOcurenceControler.deletetaskOccurence
 )
 

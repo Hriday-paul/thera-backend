@@ -4,6 +4,9 @@ import { companyService } from "./company.service";
 import sendResponse from "../../../utils/sendResponse";
 import httpStatus from "http-status"
 import config from "../../../config";
+import { User } from "../user.models";
+import { Types } from "mongoose";
+import AppError from "../../../error/AppError";
 
 //add new location to company
 const addCompanyLocation = catchAsync(async (req: Request, res: Response) => {
@@ -19,6 +22,34 @@ const addCompanyLocation = catchAsync(async (req: Request, res: Response) => {
 
 const myProfile = catchAsync(async (req: Request, res: Response) => {
     const result = await companyService.myProfile(req?.user?._id);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Your company profile retrived successfully',
+        data: result,
+    });
+});
+
+const asAStaffmyCompanyProfile = catchAsync(async (req: Request, res: Response) => {
+
+    const user = await User.findOne({ _id: new Types.ObjectId(req?.user?._id), role: "staf" });
+
+    if (!user) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'User not found',
+        );
+    }
+
+    if (!user?.staf_company_id) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    };
+
+    const result = await companyService.myProfile(user?.staf_company_id as unknown as string);
+
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
@@ -63,6 +94,33 @@ const updateCompanyReminderMessage = catchAsync(async (req: Request, res: Respon
         data: result,
     });
 });
+const updateCompanyReminderMessage_by_staff = catchAsync(async (req: Request, res: Response) => {
+
+    const user = await User.findOne({ _id: new Types.ObjectId(req?.user?._id), role: "staf" });
+
+    if (!user) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'User not found',
+        );
+    }
+
+    if (!user?.staf_company_id) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    };
+
+    const result = await companyService.updateCompanyReminderMessage(user?.staf_company_id as unknown as string, req.body);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Appoinment reminder message updated successfully',
+        data: result,
+    });
+});
 
 const services = catchAsync(async (req: Request, res: Response) => {
 
@@ -74,6 +132,33 @@ const services = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
+const servicesByStaff = catchAsync(async (req: Request, res: Response) => {
+
+    const user = await User.findOne({ _id: new Types.ObjectId(req?.user?._id), role: "staf" });
+
+    if (!user) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'User not found',
+        );
+    }
+
+    if (!user?.staf_company_id) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    };
+
+    const result = await companyService.services(user?.staf_company_id as unknown as string, req.query);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Your company services retrived successfully',
+        data: result,
+    });
+});
+
 const addNewService = catchAsync(async (req: Request, res: Response) => {
 
     const result = await companyService.addNewService(req?.user?._id, req.body);
@@ -84,6 +169,33 @@ const addNewService = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
+const addNewService_by_staff = catchAsync(async (req: Request, res: Response) => {
+
+    const user = await User.findOne({ _id: new Types.ObjectId(req?.user?._id), role: "staf" });
+
+    if (!user) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'User not found',
+        );
+    }
+
+    if (!user?.staf_company_id) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    };
+
+    const result = await companyService.addNewService(user?.staf_company_id as unknown as string, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'New service added to your company',
+        data: result,
+    });
+});
+
 const editService = catchAsync(async (req: Request, res: Response) => {
 
     const result = await companyService.editService(req?.user?._id, req?.params?.id, req.body);
@@ -94,9 +206,63 @@ const editService = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
+const editServiceByStaff = catchAsync(async (req: Request, res: Response) => {
+
+    const user = await User.findOne({ _id: new Types.ObjectId(req?.user?._id), role: "staf" });
+
+    if (!user) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'User not found',
+        );
+    }
+
+    if (!user?.staf_company_id) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    };
+
+    const result = await companyService.editService(user?.staf_company_id as unknown as string, req?.params?.id, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Service updated successfully',
+        data: result,
+    });
+});
+
 const deleteService = catchAsync(async (req: Request, res: Response) => {
 
     const result = await companyService.deleteService(req?.user?._id, req?.params?.id);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Service deleted successfully',
+        data: result,
+    });
+});
+const deleteService_byStaff = catchAsync(async (req: Request, res: Response) => {
+
+    const user = await User.findOne({ _id: new Types.ObjectId(req?.user?._id), role: "staf" });
+
+    if (!user) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'User not found',
+        );
+    }
+
+    if (!user?.staf_company_id) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    };
+
+    const result = await companyService.deleteService(user?.staf_company_id as unknown as string, req?.params?.id);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -221,16 +387,22 @@ const age_stats = catchAsync(async (req: Request, res: Response) => {
 export const companyControler = {
     addCompanyLocation,
     myProfile,
+    asAStaffmyCompanyProfile,
     updateCompany,
     services,
+    servicesByStaff,
     addNewService,
+    addNewService_by_staff,
     editService,
+    editServiceByStaff,
     deleteService,
+    deleteService_byStaff,
     locations,
     editLocation,
     deleteLocation,
     updateCompanyAutomation,
     updateCompanyReminderMessage,
+    updateCompanyReminderMessage_by_staff,
     addPatientTag,
     editpatienttags,
     deletepatienttags,

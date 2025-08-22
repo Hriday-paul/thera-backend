@@ -14,7 +14,7 @@ const appointmentSchema = new mongoose.Schema<IAppoinment>({
         enum: ["none", "daily", "weekly", "monthly", "yearly"],
         default: "none"
     },
-    repeat_count: { type: Number, default: 0 },
+    repeat_count: { type: Number, default: 1 },
     staff_ids: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }],
     patient_id: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
     company_id: { type: mongoose.Schema.Types.ObjectId, ref: "users" },

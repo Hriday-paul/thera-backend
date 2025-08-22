@@ -120,55 +120,6 @@ async function createTask(payload: IITask, companyId: string, userId: string) {
 
 const allTasks = async (companyId: string) => {
 
-    // const occurrences = await TaskOccurrence.aggregate([
-    //     // Join with Task collection
-    //     {
-    //         $lookup: {
-    //             from: "tasks",
-    //             localField: "task_id",
-    //             foreignField: "_id",
-    //             as: "task",
-    //         },
-    //     },
-    //     { $unwind: "$task" },
-
-    //     // Filter by company_id
-    //     {
-    //         $match: {
-    //             "task.company_id": new Types.ObjectId(companyId),
-    //         },
-    //     },
-
-    //     // Join with Subtasks
-    //     {
-    //         $lookup: {
-    //             from: "subtasks",
-    //             let: { occId: "$_id" },
-    //             pipeline: [
-    //                 {
-    //                     $match: {
-    //                         $expr: { $eq: ["$task_occurrence_id", "$$occId"] },
-    //                     },
-    //                 },
-    //             ],
-    //             as: "subtasks",
-    //         },
-    //     },
-
-    //     // Optional: project only required fields
-    //     {
-    //         $project: {
-    //             _id: 1,
-    //             start_datetime: 1,
-    //             end_datetime: 1,
-    //             "task._id": 1,
-    //             "task.title": 1,
-    //             "task.description": 1,
-    //             subtasks: 1,
-    //         },
-    //     },
-    // ]);
-
     const occurrences = await TaskOccurrence.aggregate([
         // 🔹 Match only occurrences where the parent task belongs to the company
         {
@@ -179,6 +130,64 @@ const allTasks = async (companyId: string) => {
                 as: "task",
                 pipeline: [
                     { $match: { company_id: new Types.ObjectId(companyId) } },
+
+                    // 🔹 Populate created user
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "created",
+                            foreignField: "_id",
+                            as: "created",
+                            pipeline: [
+                                { $project: { password: 0 } }
+                            ]
+                        },
+                    },
+                    { $unwind: { path: "$created", preserveNullAndEmptyArrays: true } },
+
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "staff_ids",
+                            foreignField: "_id",
+                            as: "staff_ids",
+                            pipeline: [
+                                { $project: { password: 0 } }
+                            ]
+                        },
+                    }
+
+                ],
+            },
+        },
+        { $unwind: "$task" },
+
+        // 🔹 Lookup subtasks for each occurrence
+        {
+            $lookup: {
+                from: "subtasks",
+                localField: "_id",
+                foreignField: "task_occurence",
+                as: "subtasks",
+            },
+        },
+    ]);
+
+    return occurrences;
+}
+
+const allTasksForAStaff = async (staffId: string) => {
+
+    const occurrences = await TaskOccurrence.aggregate([
+        // 🔹 Match only occurrences where the parent task belongs to the company
+        {
+            $lookup: {
+                from: "tasks",
+                localField: "task",
+                foreignField: "_id",
+                as: "task",
+                pipeline: [
+                    { $match: { staff_ids: { $in: [new Types.ObjectId(staffId)] } } },
 
                     // 🔹 Populate created user
                     {
@@ -239,5 +248,6 @@ async function updatetask(taskId: string, payload: ITask) {
 export const taskService = {
     createTask,
     allTasks,
+    allTasksForAStaff,
     updatetask
 }

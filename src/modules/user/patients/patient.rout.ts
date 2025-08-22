@@ -25,7 +25,7 @@ router.put(
     parseData(),
     // addStaffValidator,
     // req_validator(),
-    auth(USER_ROLE.company),
+    auth(USER_ROLE.company, USER_ROLE.patient),
     PatientController.updatePatient,
 );
 
@@ -34,10 +34,15 @@ router.get(
     auth(USER_ROLE.company),
     PatientController.patientsListsWithAppoinmentHistory,
 );
+router.get(
+    '/by-staf',
+    auth(USER_ROLE.staf),
+    PatientController.byStaff_patientsListsWithAppoinmentHistory,
+);
 
 router.get(
     '/stats/:id',
-    auth(USER_ROLE.company),
+    auth(USER_ROLE.company, USER_ROLE.staf),
     PatientController.patientStats,
 );
 
@@ -45,14 +50,14 @@ router.patch(
     '/family-group/:id',
     addPatientfamilyGroupValidator,
     req_validator(),
-    auth(USER_ROLE.company),
+    auth(USER_ROLE.company, USER_ROLE.staf),
     PatientController.addFamilyGroup,
 );
 router.post(
     '/person-toFamily/:id',
     familyGroupPersonAddValidator,
     req_validator(),
-    auth(USER_ROLE.company),
+    auth(USER_ROLE.company, USER_ROLE.staf),
     PatientController.addNewPersonToFamily,
 );
 
@@ -60,7 +65,7 @@ router.patch(
     '/person-toFamily/:id',
     familyGroupPersoUpdateValidator,
     req_validator(),
-    auth(USER_ROLE.company),
+    auth(USER_ROLE.company, USER_ROLE.staf),
     PatientController.updatePersonInFamily,
 );
 
@@ -68,7 +73,7 @@ router.delete(
     '/person-toFamily/:id',
     PersonDeleteFamilyValidator,
     req_validator(),
-    auth(USER_ROLE.company),
+    auth(USER_ROLE.company, USER_ROLE.staf),
     PatientController.deletePersonFromFamily,
 );
 
@@ -76,7 +81,7 @@ router.post(
     '/emargency-person/:id',
     addPatientEmergencyPersonValidator,
     req_validator(),
-    auth(USER_ROLE.company),
+    auth(USER_ROLE.company, USER_ROLE.staf),
     PatientController.addEmergencyPerson,
 );
 
@@ -84,7 +89,7 @@ router.patch(
     '/emargency-person/:id',
     updatePatientEmergencyPersonValidator,
     req_validator(),
-    auth(USER_ROLE.company),
+    auth(USER_ROLE.company, USER_ROLE.staf),
     PatientController.updateEmergencyPerson,
 );
 
@@ -92,7 +97,7 @@ router.delete(
     '/emargency-person/:id',
     PersonDeleteFamilyValidator,
     req_validator(),
-    auth(USER_ROLE.company),
+    auth(USER_ROLE.company, USER_ROLE.staf),
     PatientController.deleteEmergencyPerson,
 );
 
@@ -114,7 +119,7 @@ router.delete(
 
 router.get(
     '/profile/:id',
-    auth(USER_ROLE.company),
+    auth(USER_ROLE.company, USER_ROLE.staf),
     PatientController.patientprofile,
 );
 

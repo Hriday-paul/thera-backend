@@ -29,7 +29,7 @@ const checkout = async (packageId: string, userId: string, clientNextUrl: string
   )
 
   if (!foundPackage) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Boasting Package Not Found!');
+    throw new AppError(httpStatus.NOT_FOUND, 'Package Not Found!');
   }
 
   const startedAt = Date.now();

@@ -26,7 +26,7 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
 })
 
 //login user
-const loginUser = catchAsync(async (req: Request<{}, {}, { email: string, password: string }>, res: Response) => {
+const loginUser = catchAsync(async (req: Request<{}, {}, { email: string, password: string, role : string }>, res: Response) => {
 
     const result = await authService.loginUser(req.body)
     sendResponse(res, {

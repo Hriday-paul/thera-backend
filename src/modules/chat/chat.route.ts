@@ -54,6 +54,13 @@ router.get(
   ),
   chatController.allUserToMyCompanyNotInChat,
 );
+router.get(
+  '/not-chat-users/by-staf',
+  auth(
+    USER_ROLE.staf,
+  ),
+  chatController.allUserToMyCompanyNotInChat_asStaff,
+);
 
 router.get(
   '/:id',

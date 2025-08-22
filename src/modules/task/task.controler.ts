@@ -27,6 +27,18 @@ const allTasks = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 })
+const allTasksForAStaff = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await taskService.allTasksForAStaff(req?.user?._id);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'All tasks retrived successfully',
+        data: result,
+    });
+})
+
 const updatetask = catchAsync(async (req: Request, res: Response) => {
 
     const result = await taskService.updatetask(req.params?.id, req.body);
@@ -42,5 +54,6 @@ const updatetask = catchAsync(async (req: Request, res: Response) => {
 export const taskControler = {
     createTask,
     allTasks,
+    allTasksForAStaff,
     updatetask
 }

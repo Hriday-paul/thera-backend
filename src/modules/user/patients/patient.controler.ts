@@ -4,6 +4,9 @@ import { PatientService } from "./patients.service";
 import sendResponse from "../../../utils/sendResponse";
 import httpStatus from "http-status"
 import config from "../../../config";
+import { User } from "../user.models";
+import AppError from "../../../error/AppError";
+import { Types } from "mongoose";
 
 //get my patient profile
 const patientprofile = catchAsync(async (req: Request, res: Response) => {
@@ -19,6 +22,35 @@ const patientprofile = catchAsync(async (req: Request, res: Response) => {
 //all patients
 const allPatientsByCompany = catchAsync(async (req: Request, res: Response) => {
     const result = await PatientService.allPatientsByCompany(req?.user?._id);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'all patients retrived successfully',
+        data: result,
+    });
+});
+
+//all patients
+const as_a_staf_allPatientsByCompany = catchAsync(async (req: Request, res: Response) => {
+
+    const user = await User.findOne({ _id: new Types.ObjectId(req?.user?._id), role: "staf" });
+
+    if (!user) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'User not found',
+        );
+    }
+
+    if (!user?.staf_company_id) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    };
+
+    const result = await PatientService.allPatientsByCompany(user?.staf_company_id as unknown as string);
+
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
@@ -47,6 +79,34 @@ const updatePatient = catchAsync(async (req: Request, res: Response) => {
 //all patients
 const patientsListsWithAppoinmentHistory = catchAsync(async (req: Request, res: Response) => {
     const result = await PatientService.patientsListsWithAppoinmentHistory(req?.user?._id, req.query);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'all patients retrived successfully',
+        data: result,
+    });
+});
+//all patients by staff
+const byStaff_patientsListsWithAppoinmentHistory = catchAsync(async (req: Request, res: Response) => {
+
+    const user = await User.findOne({ _id: new Types.ObjectId(req?.user?._id), role: "staf" });
+
+    if (!user) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'User not found',
+        );
+    }
+
+    if (!user?.staf_company_id) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Company not found',
+        );
+    };
+
+    const result = await PatientService.patientsListsWithAppoinmentHistory(user?.staf_company_id as unknown as string, req.query);
+
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
@@ -214,7 +274,9 @@ export const PatientController = {
     patientprofile,
     updatePatient,
     allPatientsByCompany,
+    as_a_staf_allPatientsByCompany,
     patientsListsWithAppoinmentHistory,
+    byStaff_patientsListsWithAppoinmentHistory,
     addFamilyGroup,
     addNewPersonToFamily,
     updatePersonInFamily,

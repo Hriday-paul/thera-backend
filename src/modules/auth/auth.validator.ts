@@ -70,6 +70,7 @@ export const createAccountValidator = [
 export const loginAccountValidator = [
     check('email').trim().escape().not().isEmpty().withMessage('Email is required').isEmail().normalizeEmail({ all_lowercase: true }).withMessage('Invalid Email'),
     check('password').trim().escape().not().isEmpty().withMessage('password is required').isString(),
+    check('role').trim().not().isEmpty().withMessage('role is required').isString().isIn(["patient", "admin", "company", "staf"])
 ]
 
 export const refreshTokenValidator = [

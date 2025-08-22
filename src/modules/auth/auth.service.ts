@@ -62,13 +62,13 @@ const createUser = async (payload: IICompany, packag: string) => {
 
     const link = await paymentsService.checkout(packag, user?._id as unknown as string, "/auth/verify-otp?next=/auth/login")
 
-    return {user, link};
+    return { user, link };
 };
 
 // Login
-const loginUser = async (payload: { email: string, password: string, fcmToken?: string, }) => {
+const loginUser = async (payload: { email: string, password: string, fcmToken?: string, role: string }) => {
 
-    const user: IUser | null = await User.findOne({ email: payload?.email, role: { $nin: ['5', '6'] } });
+    const user: IUser | null = await User.findOne({ email: payload?.email, role: payload?.role });
 
     if (!user) {
         // If user not found, throw error

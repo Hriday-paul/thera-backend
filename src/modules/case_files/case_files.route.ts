@@ -11,15 +11,15 @@ router.post(
     '/',
     createCaseFileValidator,
     req_validator(),
-    auth(USER_ROLE.company),
+    auth(USER_ROLE.company, USER_ROLE.staf),
     caseFileControler.createcaseFile,
 );
 
-router.get("/by-patient/:id", auth(USER_ROLE.company), caseFileControler.CaseFilesByPatient);
+router.get("/by-patient/:id", auth(USER_ROLE.company, USER_ROLE.staf), caseFileControler.CaseFilesByPatient);
 router.get("/by-company", auth(USER_ROLE.company), caseFileControler.CaseFilesCompany);
 
-router.get("/stats/:id", auth(USER_ROLE.company), caseFileControler.CaseFileStats);
+router.get("/stats/:id", auth(USER_ROLE.company, USER_ROLE.staf), caseFileControler.CaseFileStats);
 
-router.patch("/status/:id", statusUpdateCaseFileValidator, req_validator(), auth(USER_ROLE.company), caseFileControler.updateCaseFileStatus);
+router.patch("/status/:id", statusUpdateCaseFileValidator, req_validator(), auth(USER_ROLE.company, USER_ROLE.staf), caseFileControler.updateCaseFileStatus);
 
 export const CaseFileRouts = router;

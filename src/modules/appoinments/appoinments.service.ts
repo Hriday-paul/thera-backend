@@ -9,6 +9,9 @@ import httpStatus from "http-status";
 import mongoose, { ObjectId, Types } from "mongoose";
 import { sendNotification } from "../notification/notification.utils";
 import { INotification } from "../notification/notification.inerface";
+import { google } from 'googleapis';
+import fs from 'fs';
+import { createRecurringGoogleEvent } from "../../utils/google_meet";
 
 interface IIApoinment extends IAppoinment {
   location: {
@@ -35,13 +38,6 @@ const generateOccurrences = async (appointment: IIApoinment, companyId: ObjectId
 
   const [startTime, endTime] = times;
 
-  // const baseStart = moment(start_date)
-  //   .hour(moment(startTime).hour())
-  //   .minute(moment(startTime).minute());
-  // const baseEnd = moment(start_date)
-  //   .hour(moment(endTime).hour())
-  //   .minute(moment(endTime).minute());
-
   const baseStart = moment(start_date)
     .hour(moment(startTime).hour())
     .minute(moment(startTime).minute())
@@ -53,6 +49,27 @@ const generateOccurrences = async (appointment: IIApoinment, companyId: ObjectId
     .minute(moment(endTime).minute())
     .second(0)
     .millisecond(0);
+
+
+  // const oAuth2Client = new google.auth.OAuth2(
+  //   "CLIENT_ID ",
+  //   "CLIENT_SECRET",
+  //   "REDIRECT_URI"
+  // );
+
+  // const scopes = ['https://www.googleapis.com/auth/calendar.events'];
+
+  // const url = oAuth2Client.generateAuthUrl({
+  //   access_type: 'offline', // so you get a refresh token
+  //   scope: scopes,
+  // });
+
+  // const { tokens } = await oAuth2Client.getToken(url);
+  // oAuth2Client.setCredentials(tokens);
+
+  // let meetLink = location?.isOnline
+  //   ? await createRecurringGoogleEvent(oAuth2Client, appointment)
+  //   : "";
 
 
   const occurrences: IOccurrencce[] = [];
@@ -79,6 +96,8 @@ const generateOccurrences = async (appointment: IIApoinment, companyId: ObjectId
         occurrenceEnd.add(i, "years");
         break;
       case "none":
+        if (i > 0) continue; // skip if somehow repeat_count > 1
+        break;
       default:
         if (i > 0) continue; // skips any repeat after the first
         break;
@@ -89,7 +108,8 @@ const generateOccurrences = async (appointment: IIApoinment, companyId: ObjectId
       start_datetime: occurrenceStart.toDate(),
       end_datetime: occurrenceEnd.toDate(),
       staff_ids,
-      location,
+      // location: { isOnline: location?.isOnline, address: location?.isOnline ? meetLink : location?.address },
+      location: location,
       status: "upcoming",
       patient_id,
       company_id: companyId
@@ -107,9 +127,9 @@ const createAppointment = async (companyId: string, payload: IIApoinment) => {
 
   const occurrences = await generateOccurrences({ ...appointment, location: payload?.location }, companyId as unknown as ObjectId);
 
-  await AppointmentOccurrence.insertMany(occurrences);
+  const res = await AppointmentOccurrence.insertMany(occurrences);
 
-  return appointment;
+  return res;
 };
 
 
@@ -283,7 +303,18 @@ const getFreeStaff = async (req_date: string, time: string, companyId: string) =
 
 
 
-const allAppointments_byCompany_WithStaffStatus = async (companyId: string) => {
+const allAppointments_byCompany_WithStaffStatus = async (companyId: string, query: Record<string, any>) => {
+
+  const status = query?.status;
+
+  const matchCondition: any = {
+    'appointment.company_id': new Types.ObjectId(companyId)
+  };
+
+  if (status) {
+    matchCondition.status = status; // upcoming, completed, cancelled, no_show
+  }
+
   const result = await AppointmentOccurrence.aggregate([
     {
       $lookup: {
@@ -311,9 +342,123 @@ const allAppointments_byCompany_WithStaffStatus = async (companyId: string) => {
     },
     { $unwind: '$patient' },
     {
-      $match: {
-        'appointment.company_id': new Types.ObjectId(companyId)
+      $match: matchCondition,
+    },
+    {
+      $unwind: '$staff_ids'
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'staff_ids',
+        foreignField: '_id',
+        as: 'staffInfo'
       }
+    },
+    { $unwind: '$staffInfo' },
+    {
+      $lookup: {
+        from: 'staffUnavailabilities',
+        let: { staffId: '$staff_ids', occurrenceId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$staffId', '$$staffId'] },
+                  { $eq: ['$occurrenceId', '$$occurrenceId'] }
+                ]
+              }
+            }
+          }
+        ],
+        as: 'unavailability'
+      }
+    },
+    {
+      $addFields: {
+        staffStatus: {
+          $cond: [
+            { $gt: [{ $size: '$unavailability' }, 0] },
+            'Unavailable',
+            'Attending'
+          ]
+        }
+      }
+    },
+    {
+      $group: {
+        _id: '$_id',
+        start: { $first: '$start_datetime' },
+        end: { $first: '$end_datetime' },
+        status: { $first: '$status' },
+        appointment: { $first: '$appointment' },
+        patient: { $first: '$patient' },
+        location: { $first: '$location' },
+        staff_ids: {
+          $push: {
+            _id: '$staff_ids',
+            name: '$staffInfo.name',
+            email: '$staffInfo.email',
+            image: '$staffInfo.image',
+            status: '$staffStatus'
+          }
+        }
+      }
+
+    },
+    {
+      $sort: { start: 1 }
+    }
+  ]);
+
+  return result;
+};
+
+const allAppointments_byStaff_WithStaffStatus = async (staffId: string, query: Record<string, any>) => {
+  const status = query?.status
+
+  const matchCondition: any = {
+    'staff_ids': { $in: [new Types.ObjectId(staffId)] }
+  };
+
+  if (status) {
+    matchCondition.status = status; // upcoming, completed, cancelled, no_show
+  }
+
+  const result = await AppointmentOccurrence.aggregate([
+    {
+      $lookup: {
+        from: 'appointments',
+        localField: 'appointment',
+        foreignField: '_id',
+        as: 'appointment'
+      }
+    },
+    { $unwind: '$appointment' },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'patient_id',
+        foreignField: '_id',
+        as: 'patient',
+        pipeline: [
+          {
+            $project: {
+              password: 0 // X exclude password
+            }
+          }
+        ]
+      }
+    },
+    { $unwind: '$patient' },
+    // {
+    //   $match: {
+    //     'staff_ids': { $in: [new Types.ObjectId(staffId)] }
+    //   }
+    // },
+    {
+      $match: matchCondition
     },
     {
       $unwind: '$staff_ids'
@@ -596,6 +741,56 @@ const appoinmentChart = async (company_id: string, query: Record<string, any>) =
   return { data: formatted, total: totalAppoinment };
 };
 
+const appoinmentChartByStaff = async (staff_id: string, query: Record<string, any>) => {
+  const userYear = query?.year ?? moment().year();
+  const startOfUserYear = moment().year(userYear).startOf('year');
+  const endOfUserYear = moment().year(userYear).endOf('year');
+
+  const occurrences = await AppointmentOccurrence.aggregate([
+    {
+      $match: {
+        staff_ids: { $in: [new Types.ObjectId(staff_id)] },
+        status: { $in: ["upcoming", "completed", "cancelled", "no_show"] },
+        createdAt: {
+          $gte: startOfUserYear.toDate(),
+          $lte: endOfUserYear.toDate(),
+        },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          month: { $month: "$createdAt" },
+          status: "$status",
+        },
+        total: { $sum: 1 },
+      },
+    },
+    { $sort: { "_id.month": 1 } },
+  ]);
+
+  // Prepare base structure: 12 months × 4 statuses
+  const statuses = ["upcoming", "completed", "cancelled", "no_show"];
+  const formatted = statuses.map(status => ({
+    name: status,
+    data: Array(12).fill(0),
+  }));
+
+  // Fill results into structure
+  occurrences.forEach(entry => {
+    const monthIndex = entry._id.month - 1; // 0-based
+    const status = entry._id.status;
+    const statusObj = formatted.find(s => s.name === status);
+    if (statusObj) {
+      statusObj.data[monthIndex] = entry.total;
+    }
+  });
+
+  const totalAppoinment = await AppointmentOccurrence.countDocuments({ staff_ids: { $in: [new Types.ObjectId(staff_id)] } });
+
+  return { data: formatted, total: totalAppoinment };
+};
+
 
 
 export const appoinmentsService = {
@@ -603,11 +798,13 @@ export const appoinmentsService = {
   updateStatusOccurence,
   getFreeStaff,
   allAppointments_byCompany_WithStaffStatus,
+  allAppointments_byStaff_WithStaffStatus,
   updateAppointment,
   markStaffUnavailable,
   sendNotificationReminder,
   allAppoinments_By_patient,
   allAppoinments_By_staff,
   getMonthlyAppointmentStats,
-  appoinmentChart
+  appoinmentChart,
+  appoinmentChartByStaff
 }
