@@ -16,9 +16,13 @@ router.post(
 );
 
 router.get("/by-patient/:id", auth(USER_ROLE.company, USER_ROLE.staf), caseFileControler.CaseFilesByPatient);
+router.get("/by-patient", auth(USER_ROLE.patient), caseFileControler.CaseFilesByPatientProfile);
 router.get("/by-company", auth(USER_ROLE.company), caseFileControler.CaseFilesCompany);
 
 router.get("/stats/:id", auth(USER_ROLE.company, USER_ROLE.staf), caseFileControler.CaseFileStats);
+router.get("/stats", auth(USER_ROLE.patient), caseFileControler.CaseFileStatsMyPatientPRofile);
+
+router.get("/company/stats/:id", auth(USER_ROLE.admin), caseFileControler.CaseFileCountByCompany);
 
 router.patch("/status/:id", statusUpdateCaseFileValidator, req_validator(), auth(USER_ROLE.company, USER_ROLE.staf), caseFileControler.updateCaseFileStatus);
 

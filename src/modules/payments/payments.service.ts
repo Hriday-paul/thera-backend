@@ -13,6 +13,7 @@ import { IPackage } from '../package/package.interface';
 import Package from '../package/package.model';
 import QueryBuilder from '../../builder/QueryBuilder';
 import Active_Package from '../active_package/active_package.model';
+import moment from 'moment';
 
 
 const stripe = new Stripe(config.stripe?.stripe_api_secret as string, {
@@ -250,6 +251,48 @@ const paymentAmount = async () => {
 
 }
 
+const monthlyPaymentByCompany = async (companyId: string, query: Record<string, any>) => {
+  const year = query.incomeYear ?? moment().year();
+  const startOfYear = moment().year(year).startOf('year');
+  const endOfYear = moment().year(year).endOf('year');
+
+  const monthlyIncome = await Payment.aggregate([
+    {
+      $match: {
+        isPaid: true,
+        user: new Types.ObjectId(companyId),
+        createdAt: {
+          $gte: startOfYear.toDate(),
+          $lte: endOfYear.toDate(),
+        },
+      },
+    },
+    {
+      $group: {
+        _id: { month: { $month: '$createdAt' } },
+        income: { $sum: '$total_amount' },
+      },
+    },
+    {
+      $sort: { '_id.month': 1 },
+    },
+  ]);
+
+  // Format monthly income to have an entry for each month
+  const formattedMonthlyIncome = Array.from({ length: 12 }, (_, index) => ({
+    month: moment().month(index).format('MMM'),
+    income: 0,
+  }));
+
+  monthlyIncome.forEach(entry => {
+    formattedMonthlyIncome[entry._id.month - 1].income = Math.round(
+      entry.income,
+    );
+  });
+
+  return formattedMonthlyIncome
+}
+
 export const paymentsService = {
   // createPayments,
   getAllPayments,
@@ -259,5 +302,7 @@ export const paymentsService = {
   checkout,
   confirmPayment,
   getPaymentsByUserId,
-  paymentAmount
+  paymentAmount,
+
+  monthlyPaymentByCompany
 };

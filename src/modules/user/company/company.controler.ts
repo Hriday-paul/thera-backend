@@ -73,6 +73,21 @@ const updateCompany = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
+const updateCompanyById = catchAsync(async (req: Request, res: Response) => {
+    let image;
+
+    image = req.file?.filename && (config.BASE_URL + '/images/' + req.file.filename);
+
+    req.body.image = image
+
+    const result = await companyService.updateCompany(req?.params?.id, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Your company profile updated successfully',
+        data: result,
+    });
+});
 
 const updateCompanyAutomation = catchAsync(async (req: Request, res: Response) => {
 
@@ -389,6 +404,7 @@ export const companyControler = {
     myProfile,
     asAStaffmyCompanyProfile,
     updateCompany,
+    updateCompanyById,
     services,
     servicesByStaff,
     addNewService,

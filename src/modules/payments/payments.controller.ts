@@ -19,7 +19,7 @@ const checkout = catchAsync(async (req: Request, res: Response) => {
 const confirmPayment = catchAsync(async (req: Request, res: Response) => {
   const { next } = req?.query;
   const result = await paymentsService.confirmPayment(req?.query);
-  
+
   res.redirect(`${config.client_Url}${next ?? config.success_url}`);
   // sendResponse(res, {
   //   success: true,
@@ -135,6 +135,15 @@ const paymentAmount = catchAsync(async (req: Request, res: Response) => {
     message: 'Payments amount retrieved successfully',
   });
 });
+const monthlyPaymentByCompany = catchAsync(async (req: Request, res: Response) => {
+  const result = await paymentsService.monthlyPaymentByCompany(req?.params?.id, req?.query); // Assume this service method exists
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    data: result,
+    message: 'Payments chart amount successfully',
+  });
+});
 
 export const paymentsController = {
   getAllPayments,
@@ -145,5 +154,7 @@ export const paymentsController = {
   getPaymentsByUserId,
   myPayments,
   checkout,
-  paymentAmount
+  paymentAmount,
+
+  monthlyPaymentByCompany
 };

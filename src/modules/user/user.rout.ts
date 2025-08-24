@@ -52,7 +52,7 @@ router.patch(
 
 router.get(
     '/my-profile',
-    auth(USER_ROLE.admin, USER_ROLE.user),
+    auth(USER_ROLE.admin),
     userController.getMyProfile,
 );
 

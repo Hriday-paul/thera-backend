@@ -236,6 +236,13 @@ const BillingSchema: Schema<IBilling> = new Schema({
   street: { type: String },
 });
 
+const contactPrefrences: Schema = new Schema({
+  mentionAgency: { type: Boolean, default: false, required: true },
+  allowPhone: { type: Boolean, default: false, required: true },
+  allowText: { type: Boolean, default: false, required: true },
+  allowEmail: { type: Boolean, default: true, required: true },
+});
+
 const patientSchema: Schema<IPatient> = new Schema<IPatient>(
   {
     name_title: { type: String, required: true },
@@ -316,8 +323,15 @@ const patientSchema: Schema<IPatient> = new Schema<IPatient>(
     // contactPreferences: { type: String },
     hasInsurance: { type: String },
     insurances: { type: [insuranceSchema], default: [] },
+
+    contactPreferences: {
+      type: contactPrefrences
+    }
+
   }
 );
+
+
 
 
 

@@ -36,6 +36,7 @@ router.get(
 );
 
 router.get('/', auth(USER_ROLE.admin), paymentsController.getAllPayments);
+router.get('/company/:id', auth(USER_ROLE.admin), paymentsController.monthlyPaymentByCompany);
 
 
 export const paymentsRoutes = router;

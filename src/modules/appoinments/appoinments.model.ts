@@ -43,8 +43,8 @@ const appointmentOccurrenceSchema = new mongoose.Schema<IOccurrencce>({
 
 
 const staffUnavailabilitySchema = new mongoose.Schema<IStaffUnavilibility>({
-    staff_id: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
-    occurrence_id: { type: mongoose.Schema.Types.ObjectId, ref: "AppointmentOccurrences" },
+    staff_id: { type: mongoose.Schema.Types.ObjectId, ref: "users", required : true },
+    occurrence_id: { type: mongoose.Schema.Types.ObjectId, ref: "AppointmentOccurrences", required : true },
     reason: { type: String },
 }, { timestamps: true });
 

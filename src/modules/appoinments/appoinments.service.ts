@@ -146,8 +146,15 @@ const updateStatusOccurence = async (occurrenceId: string, status: string) => {
 };
 
 
-const markStaffUnavailable = async (payload: IStaffUnavilibility) => {
-  return await StaffUnavailability.create(payload);
+const markStaffUnavailable = async (staff_id: string, payload: IStaffUnavilibility) => {
+  const exist = await StaffUnavailability.findOne({ staff_id, occurrence_id: payload?.occurrence_id });
+  if (exist) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'Staff already not available',
+    );
+  }
+  return await StaffUnavailability.create({ ...payload, staff_id });
 };
 
 
@@ -302,7 +309,6 @@ const getFreeStaff = async (req_date: string, time: string, companyId: string) =
 };
 
 
-
 const allAppointments_byCompany_WithStaffStatus = async (companyId: string, query: Record<string, any>) => {
 
   const status = query?.status;
@@ -358,15 +364,15 @@ const allAppointments_byCompany_WithStaffStatus = async (companyId: string, quer
     { $unwind: '$staffInfo' },
     {
       $lookup: {
-        from: 'staffUnavailabilities',
+        from: 'staffunavailabilities', // কালেকশন নাম lowercase plural হবে
         let: { staffId: '$staff_ids', occurrenceId: '$_id' },
         pipeline: [
           {
             $match: {
               $expr: {
                 $and: [
-                  { $eq: ['$staffId', '$$staffId'] },
-                  { $eq: ['$occurrenceId', '$$occurrenceId'] }
+                  { $eq: ['$staff_id', '$$staffId'] }, // ✅ ঠিক ফিল্ড নাম
+                  { $eq: ['$occurrence_id', '$$occurrenceId'] } // ✅ ঠিক ফিল্ড নাম
                 ]
               }
             }
@@ -414,6 +420,7 @@ const allAppointments_byCompany_WithStaffStatus = async (companyId: string, quer
 
   return result;
 };
+
 
 const allAppointments_byStaff_WithStaffStatus = async (staffId: string, query: Record<string, any>) => {
   const status = query?.status
@@ -474,15 +481,131 @@ const allAppointments_byStaff_WithStaffStatus = async (staffId: string, query: R
     { $unwind: '$staffInfo' },
     {
       $lookup: {
-        from: 'staffUnavailabilities',
+        from: 'staffunavailabilities', // কালেকশন নাম lowercase plural হবে
         let: { staffId: '$staff_ids', occurrenceId: '$_id' },
         pipeline: [
           {
             $match: {
               $expr: {
                 $and: [
-                  { $eq: ['$staffId', '$$staffId'] },
-                  { $eq: ['$occurrenceId', '$$occurrenceId'] }
+                  { $eq: ['$staff_id', '$$staffId'] }, // ✅ ঠিক ফিল্ড নাম
+                  { $eq: ['$occurrence_id', '$$occurrenceId'] } // ✅ ঠিক ফিল্ড নাম
+                ]
+              }
+            }
+          }
+        ],
+        as: 'unavailability'
+      }
+    },
+    {
+      $addFields: {
+        staffStatus: {
+          $cond: [
+            { $gt: [{ $size: '$unavailability' }, 0] },
+            'Unavailable',
+            'Attending'
+          ]
+        }
+      }
+    },
+    {
+      $group: {
+        _id: '$_id',
+        start: { $first: '$start_datetime' },
+        end: { $first: '$end_datetime' },
+        status: { $first: '$status' },
+        appointment: { $first: '$appointment' },
+        patient: { $first: '$patient' },
+        location: { $first: '$location' },
+        staff_ids: {
+          $push: {
+            _id: '$staff_ids',
+            name: '$staffInfo.name',
+            email: '$staffInfo.email',
+            image: '$staffInfo.image',
+            status: '$staffStatus'
+          }
+        }
+      }
+
+    },
+    {
+      $sort: { start: 1 }
+    }
+  ]);
+
+  return result;
+};
+
+const allAppointments_byPatient_WithStaffStatus = async (patientId: string, query: Record<string, any>) => {
+  const status = query?.status
+
+  const matchCondition: any = {
+    'patient_id': new Types.ObjectId(patientId)
+  };
+
+  if (status) {
+    matchCondition.status = status; // upcoming, completed, cancelled, no_show
+  }
+
+  const result = await AppointmentOccurrence.aggregate([
+    {
+      $lookup: {
+        from: 'appointments',
+        localField: 'appointment',
+        foreignField: '_id',
+        as: 'appointment'
+      }
+    },
+    { $unwind: '$appointment' },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'patient_id',
+        foreignField: '_id',
+        as: 'patient',
+        pipeline: [
+          {
+            $project: {
+              password: 0 // X exclude password
+            }
+          }
+        ]
+      }
+    },
+    { $unwind: '$patient' },
+    // {
+    //   $match: {
+    //     'staff_ids': { $in: [new Types.ObjectId(staffId)] }
+    //   }
+    // },
+    {
+      $match: matchCondition
+    },
+    {
+      $unwind: '$staff_ids'
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'staff_ids',
+        foreignField: '_id',
+        as: 'staffInfo'
+      }
+    },
+    { $unwind: '$staffInfo' },
+    {
+      $lookup: {
+        from: 'staffunavailabilities', // কালেকশন নাম lowercase plural হবে
+        let: { staffId: '$staff_ids', occurrenceId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$staff_id', '$$staffId'] }, // ✅ ঠিক ফিল্ড নাম
+                  { $eq: ['$occurrence_id', '$$occurrenceId'] } // ✅ ঠিক ফিল্ড নাম
                 ]
               }
             }
@@ -791,6 +914,56 @@ const appoinmentChartByStaff = async (staff_id: string, query: Record<string, an
   return { data: formatted, total: totalAppoinment };
 };
 
+const appoinmentChartByPatient = async (patient_id: string, query: Record<string, any>) => {
+  const userYear = query?.year ?? moment().year();
+  const startOfUserYear = moment().year(userYear).startOf('year');
+  const endOfUserYear = moment().year(userYear).endOf('year');
+
+  const occurrences = await AppointmentOccurrence.aggregate([
+    {
+      $match: {
+        patient_id: new Types.ObjectId(patient_id),
+        status: { $in: ["upcoming", "completed", "cancelled", "no_show"] },
+        createdAt: {
+          $gte: startOfUserYear.toDate(),
+          $lte: endOfUserYear.toDate(),
+        },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          month: { $month: "$createdAt" },
+          status: "$status",
+        },
+        total: { $sum: 1 },
+      },
+    },
+    { $sort: { "_id.month": 1 } },
+  ]);
+
+  // Prepare base structure: 12 months × 4 statuses
+  const statuses = ["upcoming", "completed", "cancelled", "no_show"];
+  const formatted = statuses.map(status => ({
+    name: status,
+    data: Array(12).fill(0),
+  }));
+
+  // Fill results into structure
+  occurrences.forEach(entry => {
+    const monthIndex = entry._id.month - 1; // 0-based
+    const status = entry._id.status;
+    const statusObj = formatted.find(s => s.name === status);
+    if (statusObj) {
+      statusObj.data[monthIndex] = entry.total;
+    }
+  });
+
+  const totalAppoinment = await AppointmentOccurrence.countDocuments({ patient_id: new Types.ObjectId(patient_id) });
+
+  return { data: formatted, total: totalAppoinment };
+};
+
 
 
 export const appoinmentsService = {
@@ -799,6 +972,7 @@ export const appoinmentsService = {
   getFreeStaff,
   allAppointments_byCompany_WithStaffStatus,
   allAppointments_byStaff_WithStaffStatus,
+  allAppointments_byPatient_WithStaffStatus,
   updateAppointment,
   markStaffUnavailable,
   sendNotificationReminder,
@@ -806,5 +980,6 @@ export const appoinmentsService = {
   allAppoinments_By_staff,
   getMonthlyAppointmentStats,
   appoinmentChart,
-  appoinmentChartByStaff
+  appoinmentChartByStaff,
+  appoinmentChartByPatient
 }

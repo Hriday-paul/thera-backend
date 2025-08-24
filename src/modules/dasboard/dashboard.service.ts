@@ -84,69 +84,6 @@ const earningChart = async (query: Record<string, any>) => {
 
 const countData = async () => {
     const totalUsers = await User.countDocuments({ status: 1 });
-    // const earnings = await Payment.aggregate([
-    //     {
-    //         $match: {
-    //             isPaid: true,
-    //         },
-    //     },
-    //     {
-    //         $facet: {
-    //             totalEarnings: [
-    //                 {
-    //                     $group: {
-    //                         _id: null,
-    //                         total: { $sum: '$amount' },
-    //                     },
-    //                 },
-    //             ],
-    //             allData: [
-    //                 {
-    //                     $lookup: {
-    //                         from: 'users',
-    //                         localField: 'user',
-    //                         foreignField: '_id',
-    //                         as: 'userDetails',
-    //                     },
-    //                 },
-    //                 {
-    //                     $lookup: {
-    //                         from: 'subscription',
-    //                         localField: 'subscription',
-    //                         foreignField: '_id',
-    //                         as: 'subscription',
-    //                     },
-    //                 },
-    //                 {
-    //                     $project: {
-    //                         user: { $arrayElemAt: ['$userDetails', 0] },
-    //                         subscription: { $arrayElemAt: ['$subscription', 0] },
-    //                         amount: 1,
-    //                         tranId: 1,
-    //                         status: 1,
-    //                         id: 1,
-    //                         createdAt: 1,
-    //                         updatedAt: 1,
-    //                     },
-    //                 },
-    //                 {
-    //                     $sort: { createdAt: -1 },
-    //                 },
-    //                 {
-    //                     $limit: 10,
-    //                 },
-    //             ],
-    //         },
-    //     },
-    // ]);
-
-
-
-    // const totalEarnings =
-    //     (earnings?.length > 0 &&
-    //         earnings[0]?.totalEarnings?.length > 0 &&
-    //         earnings[0]?.totalEarnings[0]?.total) ||
-    //     0;
 
     const totalEarnings = 0
 

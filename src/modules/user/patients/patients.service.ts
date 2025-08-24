@@ -1,10 +1,10 @@
 import mongoose, { Types } from "mongoose";
 import AppError from "../../../error/AppError";
-import { IBilling, IContact, IFamilyGroup, IIPatient, InsuranceType } from "../user.interface";
+import { IBilling, IContact, IFamilyGroup, IIPatient, InsuranceType, IPatient } from "../user.interface";
 import { Patient, User } from "../user.models"
 import httpStatus from "http-status"
-import { AppointmentOccurrence } from "../../appoinments/appoinments.model";
 import { Invoices } from "../../invoices/invoices.models";
+import moment from "moment";
 
 const patientprofile = async (patientId: string) => {
     const res = await User.findOne({ _id: patientId, role: "patient" }).select("-password").populate({
@@ -592,6 +592,76 @@ const patientStats = async (patientId: string) => {
     return { total, due, openInvoice: openInvoiceCount, completeInvoice: completInvoiceCount };
 };
 
+const reportKeyPerformance = async (patientId: string, query: Record<string, any>) => {
+
+    const year = query?.year ?? moment().year();
+    const startOfUserYear = moment().year(year).startOf('year');
+    const endOfUserYear = moment().year(year).endOf('year');
+
+    const total_completed_amount = await Invoices.aggregate([
+        {
+            $match: {
+                patient: new mongoose.Types.ObjectId(patientId),
+                status: "complete",
+                createdAt: {
+                    $gte: startOfUserYear.toDate(),
+                    $lte: endOfUserYear.toDate(),
+                },
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: "$total_amount" }
+            }
+        }
+    ]);
+
+    const total_due_amount = await Invoices.aggregate([
+        {
+            $match: {
+                patient: new mongoose.Types.ObjectId(patientId),
+                status: "pending",
+                createdAt: {
+                    $gte: startOfUserYear.toDate(),
+                    $lte: endOfUserYear.toDate(),
+                },
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: "$total_amount" }
+            }
+        }
+    ]);
+
+    const total = total_completed_amount[0]?.total || 0;
+    const due = total_due_amount[0]?.total || 0;
+
+    return { total, due };
+};
+
+const updatePatientNotificationStatus = async (patientId: string, payload: IPatient) => {
+    const patient = await User.findOne({ _id: patientId });
+
+    if (!patient) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Patient not found',
+        );
+    }
+    if (!patient?.patient) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Patient not found',
+        );
+    }
+
+    const res = await Patient.updateOne({ _id: patient?.patient }, { $set: payload });
+    return res;
+}
+
 export const PatientService = {
     patientprofile,
     updatePatient,
@@ -611,5 +681,8 @@ export const PatientService = {
     editInsurance,
     deleteInsurance,
     patientsListsWithAppoinmentHistory,
-    patientStats
+    patientStats,
+    reportKeyPerformance,
+
+    updatePatientNotificationStatus
 }

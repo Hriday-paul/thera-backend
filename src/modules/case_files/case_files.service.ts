@@ -6,7 +6,7 @@ import { ICaseFile } from "./case_files.interface";
 import { CaseFiles } from "./case_files.model";
 import httpStatus from "http-status";
 
-const createcaseFile = async (companyId : string, payload: ICaseFile) => {
+const createcaseFile = async (companyId: string, payload: ICaseFile) => {
 
     const file_id = "#" + generateRandomString(10);
 
@@ -27,7 +27,7 @@ const CaseFilesByPatient = async (patient: string, query: Record<string, any>) =
 };
 const CaseFilesByCompany = async (company: string, query: Record<string, any>) => {
 
-    const caseFileModel = new QueryBuilder(CaseFiles.find({ companyId : new Types.ObjectId(company), isDeleted: false }).populate("assign_stafs").populate("patient"), query)
+    const caseFileModel = new QueryBuilder(CaseFiles.find({ companyId: new Types.ObjectId(company), isDeleted: false }).populate("assign_stafs").populate("patient"), query)
         .search(["file_id", "name"])
         .sort();
 
@@ -62,10 +62,22 @@ const CaseFileStats = async (patient: string) => {
     };
 };
 
+const CaseFileCountByCompany = async (company: string) => {
+
+    const total = await CaseFiles.countDocuments({ companyId: new Types.ObjectId(company), isDeleted: false });
+
+    const closed = await CaseFiles.countDocuments({ companyId: new Types.ObjectId(company), isDeleted: false, isClosed: true });
+
+    const opended = await CaseFiles.countDocuments({ companyId: new Types.ObjectId(company), isDeleted: false, isClosed: false });
+
+    return { total, closed, opended };
+};
+
 export const CaseFileService = {
     createcaseFile,
     CaseFilesByPatient,
     updateCaseFileStatus,
     CaseFileStats,
-    CaseFilesByCompany
+    CaseFilesByCompany,
+    CaseFileCountByCompany,
 }

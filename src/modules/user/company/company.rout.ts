@@ -6,7 +6,6 @@ import { companyControler } from "./company.controler";
 import { image_Upload } from "../../../utils/FileUpload";
 import parseData from "../../../middleware/parseData";
 
-
 const router = Router();
 
 router.get(
@@ -14,6 +13,7 @@ router.get(
     auth(USER_ROLE.company),
     PatientController.allPatientsByCompany,
 );
+
 router.get(
     '/patients/by-staf',
     auth(USER_ROLE.staf),
@@ -31,7 +31,6 @@ router.get(
     auth(USER_ROLE.staf),
     companyControler.asAStaffmyCompanyProfile,
 );
-
 
 router.get(
     '/services',
@@ -122,6 +121,15 @@ router.patch(
     companyControler.updateCompany,
 );
 router.patch(
+    '/profile/:id',
+    image_Upload.single('image'),
+    parseData(),
+    auth(USER_ROLE.admin, USER_ROLE.company),
+    companyControler.updateCompanyById,
+);
+
+
+router.patch(
     '/automation',
     auth(USER_ROLE.company),
     companyControler.updateCompanyAutomation,
@@ -153,6 +161,7 @@ router.get(
     auth(USER_ROLE.company),
     companyControler.gender_stats,
 );
+
 router.get(
     '/reports/age-stats',
     auth(USER_ROLE.company),

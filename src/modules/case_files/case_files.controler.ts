@@ -25,6 +25,18 @@ const CaseFilesByPatient = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
+const CaseFilesByPatientProfile = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await CaseFileService.CaseFilesByPatient(req?.user?._id, req.query);
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: 'Case file retrived successfully',
+        data: result,
+    });
+});
+
 const CaseFilesCompany = catchAsync(async (req: Request, res: Response) => {
 
     const result = await CaseFileService.CaseFilesByCompany(req?.user?._id, req.query);
@@ -60,11 +72,37 @@ const CaseFileStats = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
+const CaseFileStatsMyPatientPRofile = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await CaseFileService.CaseFileStats(req.user?._id);
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: 'Case file status retrived successfully',
+        data: result,
+    });
+});
+
+const CaseFileCountByCompany = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await CaseFileService.CaseFileCountByCompany(req.params?.id);
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: 'Case file status retrived successfully',
+        data: result,
+    });
+});
 
 export const caseFileControler = {
     createcaseFile,
     CaseFilesByPatient,
+    CaseFilesByPatientProfile,
     updateCaseFileStatus,
     CaseFileStats,
-    CaseFilesCompany
+    CaseFileStatsMyPatientPRofile,
+    CaseFilesCompany,
+    CaseFileCountByCompany
 }

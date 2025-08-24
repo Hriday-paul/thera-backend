@@ -67,6 +67,12 @@ export const AppointmentReminderValidate = [
         .isMongoId().withMessage("Invalid appoinment"),
 ]
 
+export const AppointmentStaffUnavailble = [
+    check("occurrence_id")
+        .notEmpty().withMessage("appoinment is required.")
+        .isMongoId().withMessage("Invalid appoinment"),
+]
+
 export const validateMonthYear = [
     query("monthYear")
         .optional()

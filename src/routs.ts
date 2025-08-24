@@ -16,6 +16,7 @@ import { TaskOccurenece } from './modules/task_occurece/task_occurence.route';
 import { packageRouts } from './modules/package/package.rout';
 import { Active_pack_router } from './modules/active_package/active_package.route';
 import { invoicesRoutes } from './modules/invoices/invoices.route';
+import { adminRouter } from './modules/user/admin/admin.route';
 
 
 const router = express.Router();
@@ -28,6 +29,10 @@ const moduleRoutes = [
     {
         path: '/users',
         route: userRoutes,
+    },
+    {
+        path: '/admin',
+        route: adminRouter,
     },
     {
         path: '/contacts',

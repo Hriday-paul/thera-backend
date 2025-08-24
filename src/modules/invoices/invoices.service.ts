@@ -18,6 +18,7 @@ const getAllinvoicesByPatient = async (userId: string, query: Record<string, any
 
   return data;
 };
+
 const getAllinvoicesByCompany = async (companyId: string, query: Record<string, any>) => {
   const paymentModel = new QueryBuilder(Invoices.find({ company: new Types.ObjectId(companyId) }), query)
     .search(['invoice_num'])

@@ -8,9 +8,20 @@ import { User } from "../user.models";
 import AppError from "../../../error/AppError";
 import { Types } from "mongoose";
 
-//get my patient profile
+//get patients profile
 const patientprofile = catchAsync(async (req: Request, res: Response) => {
     const result = await PatientService.patientprofile(req?.params?.id);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'patient profile retrived successfully',
+        data: result,
+    });
+});
+
+//get patients profile
+const myPatientprofile = catchAsync(async (req: Request, res: Response) => {
+    const result = await PatientService.patientprofile(req?.user?._id);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
@@ -269,9 +280,37 @@ const patientStats = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
+const patientStatsForMyProfile = catchAsync(async (req: Request, res: Response) => {
+    const result = await PatientService.patientStats(req?.user?._id);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Patient stat retrived successfully',
+        data: result,
+    });
+});
+const reportKeyPerformance = catchAsync(async (req: Request, res: Response) => {
+    const result = await PatientService.reportKeyPerformance(req?.user?._id, req?.query);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Patient stat retrived successfully',
+        data: result,
+    });
+});
+const updatePatientNotificationStatus = catchAsync(async (req: Request, res: Response) => {
+    const result = await PatientService.updatePatientNotificationStatus(req?.user?._id, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Patient status updated successfully',
+        data: result,
+    });
+});
 
 export const PatientController = {
     patientprofile,
+    myPatientprofile,
     updatePatient,
     allPatientsByCompany,
     as_a_staf_allPatientsByCompany,
@@ -291,5 +330,8 @@ export const PatientController = {
     addInsurance,
     editInsurance,
     deleteInsurance,
-    patientStats
+    patientStats,
+    patientStatsForMyProfile,
+    reportKeyPerformance,
+    updatePatientNotificationStatus
 }

@@ -99,6 +99,19 @@ const allAppointments_bystaff_WithStaffStatus = catchAsync(async (req: Request, 
         message: 'Appoinments retrived successfully',
         data: result,
     });
+});
+
+const allAppointments_byPatient_WithStaffStatus = catchAsync(async (req: Request, res: Response) => {
+
+
+    const result = await appoinmentsService.allAppointments_byPatient_WithStaffStatus(req?.user?._id, req.query);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Appoinments retrived successfully',
+        data: result,
+    });
 })
 
 const sendNotificationReminder = catchAsync(async (req: Request, res: Response) => {
@@ -109,6 +122,17 @@ const sendNotificationReminder = catchAsync(async (req: Request, res: Response) 
         statusCode: httpStatus.OK,
         success: true,
         message: 'Reminder sent successfully',
+        data: result,
+    });
+})
+const markStaffUnavailable = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await appoinmentsService.markStaffUnavailable(req?.user?._id, req?.body);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Staff unaivalable successfully',
         data: result,
     });
 })
@@ -128,6 +152,17 @@ const updateStatusOccurence = catchAsync(async (req: Request, res: Response) => 
 const allAppoinments_By_patient = catchAsync(async (req: Request, res: Response) => {
 
     const result = await appoinmentsService.allAppoinments_By_patient(req?.params?.id, req?.query);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Appoinments retrived successfully',
+        data: result,
+    });
+})
+const allAppoinments_my_patient_profile = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await appoinmentsService.allAppoinments_By_patient(req?.user?._id, req?.query);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -184,6 +219,19 @@ const getMonthlyAppointmentStats_by_staff = catchAsync(async (req: Request, res:
         data: result,
     });
 })
+const getMonthlyAppointmentStats_by_patient = catchAsync(async (req: Request, res: Response) => {
+
+    req.query.patient = req?.user?._id;
+
+    const result = await appoinmentsService.getMonthlyAppointmentStats(req?.query);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Appoinment stats retrived successfully',
+        data: result,
+    });
+})
 
 const appoinmentChart = catchAsync(async (req: Request, res: Response) => {
 
@@ -196,9 +244,21 @@ const appoinmentChart = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 })
+
 const appoinmentChartByStaff = catchAsync(async (req: Request, res: Response) => {
 
     const result = await appoinmentsService.appoinmentChartByStaff(req?.user?._id, req?.query);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Appoinment chart data retrived successfully',
+        data: result,
+    });
+})
+const appoinmentChartByPatient = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await appoinmentsService.appoinmentChartByPatient(req?.user?._id, req?.query);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -214,13 +274,18 @@ export const appoinmentControler = {
     as_a_staff_getFreeStaffMyCompany,
     allAppointments_byCompany_WithStaffStatus,
     allAppointments_bystaff_WithStaffStatus,
+    allAppointments_byPatient_WithStaffStatus,
     sendNotificationReminder,
     updateStatusOccurence,
+    markStaffUnavailable,
     allAppoinments_By_patient,
     allAppoinments_By_staff,
+    allAppoinments_my_patient_profile,
     allAppoinments_staff_profile,
     getMonthlyAppointmentStats,
     getMonthlyAppointmentStats_by_staff,
+    getMonthlyAppointmentStats_by_patient,
     appoinmentChart,
-    appoinmentChartByStaff
+    appoinmentChartByStaff,
+    appoinmentChartByPatient
 }
