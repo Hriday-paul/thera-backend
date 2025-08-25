@@ -25,7 +25,7 @@ const update_Package = async (payload: IPackage, id: string) => {
             'Package not found',
         );
     }
-    const packages = await Package.updateOne({ _id: id }, { ...payload });
+    const packages = await Package.updateOne({ _id: id }, payload);
     return packages;
 }
 
@@ -38,7 +38,7 @@ const delete_Package = async (id: string) => {
             'Package not found',
         );
     }
-    const packages = await Package.updateOne({ _id: id }, {isDeleted : true});
+    const packages = await Package.updateOne({ _id: id }, { isDeleted: true });
     return packages;
 }
 
@@ -50,8 +50,8 @@ const getPackages_by_type = async () => {
 }
 
 // get packeges details
-const getPackages_details = async (id : string) => {
-    const packages = await Package.findOne({_id : id, isDeleted : false});
+const getPackages_details = async (id: string) => {
+    const packages = await Package.findOne({ _id: id, isDeleted: false });
     return packages;
 }
 

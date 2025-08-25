@@ -6,6 +6,6 @@ export interface IPackage {
     description: string,
     duration_day: number
     price: number;
-    features : string[]
-    isDeleted ?: boolean
+    features: { name: string, value: boolean }[]
+    isDeleted?: boolean
 }

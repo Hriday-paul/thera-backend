@@ -8,7 +8,7 @@ const PackageSchema = new Schema<IPackage>(
         title: { type: String, required : true, enum : ["Free", "Standard"] },
         description: { type: String },
         price: { type: Number, required: true, min: 0 },
-        features: { type: [String] },
+        features: { type: [{name : String, value : Boolean}] },
         duration_day: {
             type: Number,
             required: true,

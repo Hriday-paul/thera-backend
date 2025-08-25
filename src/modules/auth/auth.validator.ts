@@ -1,8 +1,8 @@
 import { check } from 'express-validator';
 
 export const createAccountValidator = [
-    check('name')
-        .notEmpty().withMessage('Name is required'),
+    // check('name')
+    //     .notEmpty().withMessage('Name is required'),
 
     check('email')
         .notEmpty().withMessage('email is required')

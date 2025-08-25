@@ -65,6 +65,16 @@ const allUserToMyCompanyNotInChat = catchAsync(async (req: Request, res: Respons
     message: 'Users retrived successfully',
     data: result,
   });
+
+});
+const allCompaniesNotInChat_for_admin = catchAsync(async (req: Request, res: Response) => {
+  const result = await chatService.allCompaniesNotInChat_for_admin(req?.user?._id, req?.query);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Users retrived successfully',
+    data: result,
+  });
 });
 
 const allUserToMyCompanyNotInChat_asStaff = catchAsync(async (req: Request, res: Response) => {
@@ -101,5 +111,6 @@ export const chatController = {
   updateChat,
   deleteChat,
   allUserToMyCompanyNotInChat,
+  allCompaniesNotInChat_for_admin,
   allUserToMyCompanyNotInChat_asStaff
 };

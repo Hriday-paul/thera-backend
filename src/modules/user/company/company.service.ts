@@ -42,7 +42,9 @@ const myProfile = async (userId: string) => {
 
 const updateCompany = async (companyId: string, payload: IICompany) => {
 
-    const user = await User.findByIdAndUpdate({ _id: companyId }, { name: payload?.name, image: payload?.image ?? undefined }, { new: true })
+    const { organization_name = undefined } = payload
+
+    const user = await User.findByIdAndUpdate({ _id: companyId }, { name: organization_name ?? undefined, image: payload?.image ?? undefined }, { new: true })
 
     //check patient is exist or not
     if (!user) {

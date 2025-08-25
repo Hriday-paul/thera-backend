@@ -200,11 +200,87 @@ const allUserToMyCompanyNotInChat = async (companyId: string, query: Record<stri
   return users;
 };
 
+const allCompaniesNotInChat_for_admin = async (adminId : string, query: Record<string, any>) => {
+
+  const adminObjId = new mongoose.Types.ObjectId(adminId);
+
+  const { role, searchTerm } = query;
+
+  const matchConditions: any = {
+    isDeleted: false,
+    isDisable: false,
+    role : "company"
+  };
+
+  // Add role filter if provided
+  if (role) {
+    matchConditions.role = role;
+  }
+
+  // Add search filter if provided
+  if (searchTerm) {
+    const regex = new RegExp(searchTerm, "i");
+    matchConditions.$and = [
+      {
+        $or: [
+          { name: regex },
+          { email: regex }
+        ]
+      }
+    ];
+  }
+
+  const users = await User.aggregate([
+    { $match: matchConditions },
+
+    // Lookup existing chats where company is a participant
+    {
+      $lookup: {
+        from: "chats",
+        let: { userId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $in: [adminObjId, "$participants"] },
+                  { $in: ["$$userId", "$participants"] }
+                ]
+              }
+            }
+          }
+        ],
+        as: "existingChat"
+      }
+    },
+
+    // Only users without a chat with this company
+    {
+      $match: {
+        existingChat: { $size: 0 }
+      }
+    },
+
+    // Exclude sensitive fields
+    {
+      $project: {
+        password: 0,
+        existingChat: 0,
+        fcmToken: 0,
+        verification: 0
+      }
+    }
+  ]);
+
+  return users;
+};
+
 export const chatService = {
   createChat,
   getMyChatList,
   getChatById,
   updateChatList,
   deleteChatList,
-  allUserToMyCompanyNotInChat
+  allUserToMyCompanyNotInChat,
+  allCompaniesNotInChat_for_admin
 };

@@ -16,7 +16,7 @@ import { paymentsService } from "../payments/payments.service"
 
 const createUser = async (payload: IICompany, packag: string) => {
 
-    const { name, email, password = '', organization_name, site_short_name, legal_organization_name, business_type, company_type, tax_type, tax_id, organization_liscence, organization_npi = "", facility_npi = '', diagnostic_code, pregnancy_related_services = false, track_pqrs_measure = false, cfr_part2 = false } = payload
+    const {email, password = '', organization_name, site_short_name, legal_organization_name, business_type, company_type, tax_type, tax_id, organization_liscence, organization_npi = "", facility_npi = '', diagnostic_code, pregnancy_related_services = false, track_pqrs_measure = false, cfr_part2 = false } = payload
 
     let isExist = await User.findOne({ email })
 
@@ -49,7 +49,7 @@ const createUser = async (payload: IICompany, packag: string) => {
     });
 
     const user = await User.findOneAndUpdate({ email }, {
-        name,
+        name : organization_name,
         email,
         password: hashedPassword,
         role: "company",

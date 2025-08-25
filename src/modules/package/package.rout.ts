@@ -13,7 +13,7 @@ router.post('/',
     packageControler.createPackage
 );
 
-router.patch('/:id',
+router.put('/:id',
     updatePackageValidator,
     req_validator(),
     auth(USER_ROLE.admin),
