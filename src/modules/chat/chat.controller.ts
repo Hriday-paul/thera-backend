@@ -79,23 +79,19 @@ const allCompaniesNotInChat_for_admin = catchAsync(async (req: Request, res: Res
 
 const allUserToMyCompanyNotInChat_asStaff = catchAsync(async (req: Request, res: Response) => {
 
-  const user = await User.findOne({ _id: new Types.ObjectId(req?.user?._id), role: "staf" });
+  const result = await chatService.allStaffPatientToMyCompanyNotInChat_for_staff(req?.user?._id, req?.query);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Users retrived successfully',
+    data: result,
+  });
+});
 
-  if (!user) {
-    throw new AppError(
-      httpStatus.NOT_FOUND,
-      'User not found',
-    );
-  }
 
-  if (!user?.staf_company_id) {
-    throw new AppError(
-      httpStatus.NOT_FOUND,
-      'Company not found',
-    );
-  };
+const allUserToMyCompanyNotInChat_for_patient = catchAsync(async (req: Request, res: Response) => {
 
-  const result = await chatService.allUserToMyCompanyNotInChat(user?.staf_company_id as unknown as string, req?.query);
+  const result = await chatService.allUserToMyCompanyNotInChat_for_patient(req?.user?._id, req?.query);
   sendResponse(res, {
     statusCode: 200,
     success: true,
@@ -112,5 +108,6 @@ export const chatController = {
   deleteChat,
   allUserToMyCompanyNotInChat,
   allCompaniesNotInChat_for_admin,
-  allUserToMyCompanyNotInChat_asStaff
+  allUserToMyCompanyNotInChat_asStaff,
+  allUserToMyCompanyNotInChat_for_patient
 };

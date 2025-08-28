@@ -7,6 +7,12 @@ const stripe = {
   stripe_api_secret: process.env.STRIPE_API_SECRET,
 };
 
+const message = {
+  twilioAccountSID : process.env.TWILIO_ACCOUNT_SID,
+  twilioAuthToken : process.env.TWILIO_AUTH_TOKEN,
+  twilioPhoneNumber : process.env.TWILIO_PHONE_NUMBER,
+}
+
 export default {
   NODE_ENV: process.env.NODE_ENV,
   port: process.env.PORT,
@@ -30,4 +36,5 @@ export default {
   stripe_secret: process.env.STRIPE_API_SECRET,
   stripe_key: process.env.STRIPE_API_KEY,
   stripe,
+  message
 };

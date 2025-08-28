@@ -1,10 +1,20 @@
 import AppError from "../../error/AppError";
+import { User } from "../user/user.models";
 import { IPackage } from "./package.interface"
 import Package from "./package.model";
 import httpStatus from 'http-status';
 
 //create a new package
 const create_Package = async (payload: IPackage) => {
+    const exist = await Package.findOne({ title: payload?.title });
+
+    if (!exist) {
+        throw new AppError(
+            httpStatus.FORBIDDEN,
+            'Package already exist',
+        );
+    }
+
     const packages = await Package.create(payload);
     if (!packages) {
         throw new AppError(
@@ -54,6 +64,7 @@ const getPackages_details = async (id: string) => {
     const packages = await Package.findOne({ _id: id, isDeleted: false });
     return packages;
 }
+
 
 export const packageService = {
     create_Package,

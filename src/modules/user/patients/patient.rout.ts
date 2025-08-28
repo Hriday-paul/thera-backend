@@ -28,6 +28,13 @@ router.put(
     auth(USER_ROLE.company, USER_ROLE.patient),
     PatientController.updatePatient,
 );
+
+router.delete(
+    '/:id',
+    auth(USER_ROLE.company),
+    userController.deletePatient,
+);
+
 router.patch(
     '/',
     auth(USER_ROLE.patient),

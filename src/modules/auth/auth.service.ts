@@ -12,11 +12,12 @@ import moment from "moment"
 import { sendEmail } from "../../utils/mailSender"
 import { Company, User } from "../user/user.models"
 import { paymentsService } from "../payments/payments.service"
+import { sendNotification } from "../notification/notification.utils"
 
 
 const createUser = async (payload: IICompany, packag: string) => {
 
-    const {email, password = '', organization_name, site_short_name, legal_organization_name, business_type, company_type, tax_type, tax_id, organization_liscence, organization_npi = "", facility_npi = '', diagnostic_code, pregnancy_related_services = false, track_pqrs_measure = false, cfr_part2 = false } = payload
+    const { email, password = '', organization_name, site_short_name, legal_organization_name, business_type, company_type, tax_type, tax_id, organization_liscence, organization_npi = "", facility_npi = '', diagnostic_code, pregnancy_related_services = false, track_pqrs_measure = false, cfr_part2 = false } = payload
 
     let isExist = await User.findOne({ email })
 
@@ -33,6 +34,7 @@ const createUser = async (payload: IICompany, packag: string) => {
 
     const company = await Company.insertOne({
         organization_name,
+        org_email: email,
         site_short_name,
         legal_organization_name,
         business_type,
@@ -49,7 +51,7 @@ const createUser = async (payload: IICompany, packag: string) => {
     });
 
     const user = await User.findOneAndUpdate({ email }, {
-        name : organization_name,
+        name: organization_name,
         email,
         password: hashedPassword,
         role: "company",
@@ -105,7 +107,21 @@ const loginUser = async (payload: { email: string, password: string, fcmToken?: 
             { fcmToken: payload.fcmToken },
             { new: true }
         ) as IUser;
+
+        // Send notification if FCM token exists and user notification is unabled
+        const tokenToUse = payload.fcmToken || updatedUser?.fcmToken!;
+
+        sendNotification([tokenToUse], [{
+            title: `New user login`,
+            message: `New user login to your account`,
+            receiver: updatedUser._id,
+            receiverEmail: payload.email,
+            receiverRole: updatedUser.role,
+            sender: updatedUser._id
+        }], { title: "New user login", message: "New user login to your account" });
+
     }
+
 
     const jwtPayload: { userId: string; role: string } = {
         userId: user?._id?.toString() as string,

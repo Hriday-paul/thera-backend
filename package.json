@@ -19,6 +19,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/stripe": "^8.0.416",
+    "agenda": "^5.0.0",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -40,7 +41,8 @@
     "nodemailer": "^6.10.0",
     "npm": "^11.5.2",
     "otp-generator": "^4.0.1",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "twilio": "^5.8.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

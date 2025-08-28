@@ -60,6 +60,16 @@ const update_user_status: RequestHandler<{ id: string }, {}, { status: boolean }
     });
 })
 
+const deletePatient: RequestHandler<{ id: string }, {}, { status: boolean }> = catchAsync(async (req, res) => {
+    const result = await userService.deletePatient(req.params.id, req?.user?._id)
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Patient Deleted successfully',
+        data: result,
+    });
+})
+
 
 //create staff
 const add_new_staff = catchAsync(async (req: Request<{}, {}, IIStaf>, res: Response) => {
@@ -153,6 +163,7 @@ export const userController = {
     updateProfile,
     getMyProfile,
     update_user_status,
+    deletePatient,
     all_users,
     add_new_staff,
     staffs,

@@ -145,6 +145,16 @@ const monthlyPaymentByCompany = catchAsync(async (req: Request, res: Response) =
   });
 });
 
+const purchaseStats = catchAsync(async (req: Request, res: Response) => {
+  const result = await paymentsService.purchaseStats();
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    data: result,
+    message: 'Payments stats amount retrived successfully',
+  });
+});
+
 export const paymentsController = {
   getAllPayments,
   getPaymentsById,
@@ -156,5 +166,6 @@ export const paymentsController = {
   checkout,
   paymentAmount,
 
-  monthlyPaymentByCompany
+  monthlyPaymentByCompany,
+  purchaseStats
 };

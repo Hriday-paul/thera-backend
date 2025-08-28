@@ -1,7 +1,7 @@
 import { check, query } from "express-validator";
 
 export const addPackageValidator = [
-    check('title').trim().not().isEmpty().withMessage('title is required').isString().isLength({ min: 2 }).withMessage('title min length is 2'),
+    check('title').trim().not().isEmpty().withMessage('title is required').isString().isLength({ min: 2 }).withMessage('title min length is 2').isIn(["Free", "Standard"]).withMessage("Title should be Free, Standard"),
 
     check('features')
         .isArray()

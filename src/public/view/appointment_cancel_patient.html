@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Canceled</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            background-color: #dc3545;
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .greeting {
+            font-size: 18px;
+            color: #333333;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            font-size: 16px;
+            color: #555555;
+            margin-bottom: 30px;
+        }
+        
+        .appointment-details {
+            background-color: #f8f9fa;
+            border-left: 4px solid #dc3545;
+            padding: 20px;
+            margin: 30px 0;
+        }
+        
+        .appointment-details h3 {
+            margin: 0 0 15px 0;
+            color: #333333;
+            font-size: 18px;
+        }
+        
+        .detail-row {
+            display: flex;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #333333;
+            min-width: 120px;
+            margin-right: 10px;
+        }
+        
+        .detail-value {
+            color: #555555;
+        }
+        
+        .cancellation-reason {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+        
+        .cancellation-reason h4 {
+            margin: 0 0 10px 0;
+            color: #856404;
+            font-size: 16px;
+        }
+        
+        .cancellation-reason p {
+            margin: 0;
+            color: #856404;
+        }
+        
+        .action-buttons {
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            margin: 0 10px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px 40px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .footer p {
+            margin: 0 0 10px 0;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .contact-info {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .contact-info h4 {
+            margin: 0 0 10px 0;
+            color: #333333;
+            font-size: 16px;
+        }
+        
+        .contact-info p {
+            margin: 5px 0;
+            color: #555555;
+            font-size: 14px;
+        }
+        
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+            }
+            
+            .header, .content, .footer {
+                padding: 20px !important;
+            }
+            
+            .detail-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .detail-label {
+                min-width: auto;
+                margin-bottom: 5px;
+            }
+            
+            .btn {
+                display: block;
+                margin: 10px 0;
+                width: 100%;
+                box-sizing: border-box;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Appointment Canceled</h1>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                Dear {{name}},
+            </div>
+            
+            <div class="message">
+                We regret to inform you that your upcoming appointment has been canceled.
+            </div>
+            
+            <!-- Appointment Details -->
+            <div class="appointment-details">
+                <h3>Canceled Appointment Details</h3>
+                <div class="detail-row">
+                    <div class="detail-label">Service:</div>
+                    <div class="detail-value">{{service}}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Date:</div>
+                    <div class="detail-value">{{start_date}}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Time:</div>
+                    <div class="detail-value">{{start_time}} - {{end_time}}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Location:</div>
+                    <div class="detail-value">{{location}}</div>
+                </div>
+            </div>
+            
+            
+            <div class="message">
+                If you have any questions or concerns, please don't hesitate to reach out to our team. We're here to help and look forward to serving you soon.
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>Thank you for your understanding.</p>
+            <p><strong>Healthcare Plus Medical Center</strong></p>
+        </div>
+    </div>
+</body>
+</html>

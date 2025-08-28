@@ -14,6 +14,13 @@ router.post("/",
     appoinmentControler.createAppointment
 )
 
+router.post("/by-staf",
+    createAppointmentValidate,
+    req_validator(),
+    auth(USER_ROLE.staf),
+    appoinmentControler.createAppointmentForStaff
+)
+
 router.post("/reminder",
     AppointmentReminderValidate,
     req_validator(),

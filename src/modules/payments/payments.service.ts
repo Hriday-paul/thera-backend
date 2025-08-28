@@ -293,6 +293,52 @@ const monthlyPaymentByCompany = async (companyId: string, query: Record<string, 
   return formattedMonthlyIncome
 }
 
+
+const purchaseStats = async () => {
+  const planStats = await Payment.aggregate([
+    {
+      $match: {
+        isPaid: true,
+        isDeleted: false,
+        // startedAt: { $lte: new Date() },
+        // expiredAt: { $gte: new Date() }, // active subscription
+      }
+    },
+    {
+      $group: {
+        _id: "$package",
+        totalCompanies: { $sum: 1 }
+      }
+    },
+    {
+      $lookup: {
+        from: "packages",
+        localField: "_id",
+        foreignField: "_id",
+        as: "packageInfo"
+      }
+    },
+    { $unwind: "$packageInfo" },
+    {
+      $project: {
+        _id: 0,
+        title: "$packageInfo.title",
+        totalCompanies: 1
+      }
+    }
+  ]);
+
+  const total = planStats.reduce((sum, item) => sum + item.totalCompanies, 0);
+  const formattedStats = planStats.map(item => ({
+    ...item,
+    percentage: total > 0 ? ((item.totalCompanies / total) * 100).toFixed(2) : 0
+  }));
+
+
+  return formattedStats
+
+}
+
 export const paymentsService = {
   // createPayments,
   getAllPayments,
@@ -304,5 +350,6 @@ export const paymentsService = {
   getPaymentsByUserId,
   paymentAmount,
 
-  monthlyPaymentByCompany
+  monthlyPaymentByCompany,
+  purchaseStats
 };

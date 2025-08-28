@@ -18,7 +18,7 @@ const patientprofile = async (patientId: string) => {
 }
 
 const allPatientsByCompany = async (companyId: string) => {
-    const res = await User.find({ patient_company_id: new Types.ObjectId(companyId), role: "patient" }).select("-password").populate({
+    const res = await User.find({ patient_company_id: new Types.ObjectId(companyId), role: "patient", isDisable: false, isDeleted: false, status: 1 }).select("-password").populate({
         path: "patient",
         populate: {
             path: "assign_stafs",
@@ -55,7 +55,6 @@ const updatePatient = async (patientId: string, payload: IIPatient) => {
 
 }
 
-
 export const patientsListsWithAppoinmentHistory = async (companyId: string, query: Record<string, any>) => {
     const page = query?.page || 1;
     const limit = query.limit || 10;
@@ -63,6 +62,7 @@ export const patientsListsWithAppoinmentHistory = async (companyId: string, quer
 
     const searchTerm = query?.searchTerm;
     const isDisabled = query?.isDisabled;
+    const status = Number(query?.status) ?? 1;
 
     const disabledFilter =
         typeof isDisabled !== "undefined"
@@ -88,6 +88,8 @@ export const patientsListsWithAppoinmentHistory = async (companyId: string, quer
                 patient_company_id: new Types.ObjectId(companyId),
                 ...searchFilter,
                 ...disabledFilter,
+                isDeleted: false,
+                status
             }
         },
         // Lookup invoices first

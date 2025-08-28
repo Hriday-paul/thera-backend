@@ -70,6 +70,13 @@ router.get(
   ),
   chatController.allUserToMyCompanyNotInChat_asStaff,
 );
+router.get(
+  '/not-chat-users/by-patient',
+  auth(
+    USER_ROLE.patient,
+  ),
+  chatController.allUserToMyCompanyNotInChat_for_patient,
+);
 
 router.get(
   '/:id',

@@ -31,18 +31,18 @@ const billingSchema = new Schema({
   phone: { type: String },
 })
 const reminderSchema = new Schema<IReminder>({
-  msg_type: { type: String, required: true },
+  msg_type: { type: String, required: true, enum: ["Hours", "Minutes", "Days"] },
   long_ago: { type: Number, required: true },
-  time_type: { type: String, required: true },
+  time_type: { type: String, required: true, enum: ["Email", "SMS"] },
 })
 const MsgTemplateSchema = new Schema<IMsgTemplate>({
   sms: {
     isActive: { type: Boolean, default: false },
-    message: { type: String, required: true, default: "Your appointment reminder for {{organisation Name}}. Reply with 1 to confirm or 2 cancel. Call\nYou have an appointment with us scheduled for {{orgCallbackNumber}} to reschedule." },
+    message: { type: String, default: "Your appointment reminder for {{organisation Name}}. Reply with 1 to confirm or 2 cancel. Call\nYou have an appointment with us scheduled for {{orgCallbackNumber}} to reschedule." },
   },
   email: {
     isActive: { type: Boolean, default: true },
-    message: { type: String, required: true },
+    message: { type: String, default: "Your appointment reminder for {{organisation Name}}. Reply with 1 to confirm or 2 cancel. Call\nYou have an appointment with us scheduled for {{orgCallbackNumber}} to reschedule." },
   },
 })
 
@@ -254,20 +254,20 @@ const patientSchema: Schema<IPatient> = new Schema<IPatient>(
     sexual_orientation: String,
     date_of_birth: { type: Date, required: true },
     country: { type: String, required: true },
-    state: { type: String, required: true },
-    zip_code: { type: String, required: true },
-    street: { type: String, required: true },
-    phone: { type: String, required: true },
-    address: { type: String, required: true },
-    ssn: { type: String, required: true },
-    ethnicity: { type: String, required: true },
-    marital_status: { type: String, required: true },
-    religion: { type: String, required: true },
-    language: { type: String, required: true },
-    employment_status: { type: String, required: true },
-    employer: { type: String, required: true },
-    employer_email: { type: String, required: true },
-    employer_phone: { type: String, required: true },
+    state: { type: String },
+    zip_code: { type: String },
+    street: { type: String },
+    phone: { type: String },
+    address: { type: String },
+    ssn: { type: String },
+    ethnicity: { type: String },
+    marital_status: { type: String },
+    religion: { type: String },
+    language: { type: String },
+    employment_status: { type: String },
+    employer: { type: String },
+    employer_email: { type: String },
+    employer_phone: { type: String },
     assign_stafs: [{ type: Schema.Types.ObjectId, ref: 'users' }],
 
     contacts: { type: [contactSchema], default: [] },

@@ -19,6 +19,27 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
     });
 })
 
+const createAppointmentForStaff = catchAsync(async (req: Request, res: Response) => {
+
+    const staff = await User.findById(req?.user?._id);
+
+    if (!staff) {
+        throw new AppError(httpStatus.NOT_FOUND, "User not found")
+    }
+    if (!staff?.staf_company_id) {
+        throw new AppError(httpStatus.NOT_FOUND, "Staff company not exist found")
+    }
+
+    const result = await appoinmentsService.createAppointment(staff?.staf_company_id as unknown as string, req.body);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'New appoinment created successfully',
+        data: result,
+    });
+})
+
 function isString(value: any): value is string {
     return typeof value === "string";
 }
@@ -139,7 +160,7 @@ const markStaffUnavailable = catchAsync(async (req: Request, res: Response) => {
 
 const updateStatusOccurence = catchAsync(async (req: Request, res: Response) => {
 
-    const result = await appoinmentsService.updateStatusOccurence(req?.body?.occurenceId, req?.body?.status);
+    const result = await appoinmentsService.updateStatusOccurence(req?.body?.occurenceId, req?.body?.status, req?.user?._id);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -270,6 +291,7 @@ const appoinmentChartByPatient = catchAsync(async (req: Request, res: Response) 
 
 export const appoinmentControler = {
     createAppointment,
+    createAppointmentForStaff,
     getFreeStaff,
     as_a_staff_getFreeStaffMyCompany,
     allAppointments_byCompany_WithStaffStatus,

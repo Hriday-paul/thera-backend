@@ -1,6 +1,6 @@
 import { isSameDay, getDay } from "date-fns"; // You can use date-fns for day calculations
 import { User } from "../user/user.models";
-import { IStaf, IUser } from "../user/user.interface";
+import { IReminder, IStaf, IUser } from "../user/user.interface";
 import AppError from "../../error/AppError";
 import moment from "moment";
 import { IAppoinment, IOccurrencce, IStaffUnavilibility } from "./appoinments.interface";
@@ -12,6 +12,11 @@ import { INotification } from "../notification/notification.inerface";
 import { google } from 'googleapis';
 import fs from 'fs';
 import { createRecurringGoogleEvent } from "../../utils/google_meet";
+import config from "../../config";
+import { sendEmail } from "../../utils/mailSender";
+import { sendSMSMessage } from "../../utils/SmsSender";
+import agenda from "../../config/agenda";
+import path from "path";
 
 interface IIApoinment extends IAppoinment {
   location: {
@@ -20,7 +25,186 @@ interface IIApoinment extends IAppoinment {
   }
 }
 
+interface IIOccurrencce {
+  appointment: IAppoinment,
+  start_datetime: Date,
+  end_datetime: Date,
+  staff_ids: IUser[],
+  patient_id: IUser,
+  location: {
+    isOnline: boolean,
+    address: string
+  },
+  company_id: IUser
+  status: "upcoming" | "completed" | "cancelled" | "no_show"
+}
+
+const ReminderFunc = async (occurenceId: string, userId?: string) => {
+
+  const occurence = await AppointmentOccurrence.findOne({ _id: new Types.ObjectId(occurenceId) })
+    .populate({
+      path: "patient_id",
+      populate: {
+        path: "patient"
+      }
+    })
+    .populate({
+      path: "staff_ids",
+      populate: {
+        path: "staf"
+      }
+    })
+    .populate({
+      path: "company_id",
+      populate: {
+        path: "company"
+      }
+    }) as unknown as IIOccurrencce;
+
+  if (!occurence) return;
+
+  const staffs = occurence?.staff_ids;
+  const patient = occurence?.patient_id;
+  const company = occurence?.company_id;
+
+
+  const emailTempalte = occurence?.company_id?.company?.msg_templates?.email?.message || "";
+  const smsTemplate = occurence?.company_id?.company?.msg_templates?.sms?.message || "";
+
+  const patientfullname = patient?.patient?.f_name + " " + patient?.patient?.middle_name + " " + patient?.patient?.last_name
+  const appointmentdate = moment(occurence?.start_datetime).format('MMMM Do YYYY')
+  const appointmentTime = moment(occurence?.start_datetime).format('h:mm:ss a')
+
+  const staff_first_names = staffs?.map(i => {
+    return i?.staf?.f_name
+  }).join(', ')
+
+  const staff_full_names = staffs?.map(i => {
+    return i?.staf?.f_name + "" + i?.staf?.middle_name + "" + i?.staf?.last_name
+  }).join(', ')
+
+
+  const address = occurence?.location?.address
+
+  const realEmailTemplate = emailTempalte
+    .replace("{{ClientFullName}}", patientfullname)
+    .replace("{{ClientFirstName}}", patient?.patient?.f_name!)
+    .replace("{{ClientPreferredName}}", patient?.patient?.preferred_name ?? patientfullname)
+    .replace("{{Date}}", appointmentdate)
+    .replace("{{Time}}", appointmentTime)
+    .replace("{{TelehealthLink}}", config.client_Url!)
+    .replace("{{StaffFirstName}}", staff_first_names)
+    .replace("{{StaffFullName}}", staff_full_names)
+    .replace("{{Location}}", address)
+    .replace("{{OrgCallbackNumber}}", company?.company?.org_phone || "")
+    .replace("{{OrganisationName}}", company?.company?.organization_name!)
+
+  const realSmsTemplate = smsTemplate
+    .replace("{{ClientFullName}}", patientfullname)
+    .replace("{{ClientFirstName}}", patient?.patient?.f_name!)
+    .replace("{{ClientPreferredName}}", patient?.patient?.preferred_name ?? patientfullname)
+    .replace("{{Date}}", appointmentdate)
+    .replace("{{Time}}", appointmentTime)
+    .replace("{{TelehealthLink}}", config.client_Url!)
+    .replace("{{StaffFirstName}}", staff_first_names)
+    .replace("{{StaffFullName}}", staff_full_names)
+    .replace("{{Location}}", address)
+    .replace("{{OrgCallbackNumber}}", company?.company?.org_phone || "")
+    .replace("{{OrganisationName}}", company?.company?.organization_name!)
+
+
+  // ------------ push notifications -------------
+  // for staffs
+  const fcmTokens: string[] = (staffs?.map(i => i?.fcmToken).filter(Boolean)) as string[] || [];
+
+  const notifications = (staffs?.map(i => {
+    if (i?.fcmToken) {
+      return {
+        title: `Appointment Reminder`,
+        message: `New appointment coming at ${moment(occurence.start_datetime).format('MMMM Do YYYY, h:mm:ss a')}`,
+        receiver: i._id,
+        receiverEmail: i.email,
+        receiverRole: i.role,
+        sender: userId ? new Types.ObjectId(userId) : i._id
+      } satisfies INotification;
+    }
+    return null;
+  }) ?? []).filter((n): n is NonNullable<typeof n> => n !== null);
+
+  // for patient
+  patient?.fcmToken && fcmTokens.push(patient?.fcmToken)
+  notifications.push({
+    title: `Appointment Reminder`,
+    message: `New appointment coming at ${moment(occurence.start_datetime).format('MMMM Do YYYY, h:mm:ss a')}`,
+    receiver: patient?._id,
+    receiverEmail: patient?.email,
+    receiverRole: patient?.role,
+    sender: userId ? new Types.ObjectId(userId) : patient?._id
+  })
+
+  if (fcmTokens?.length > 0) {
+    sendNotification(fcmTokens, notifications, { title: `Appoinment Reminder`, message: `New appoinment coming at ${moment(occurence?.start_datetime).format('MMMM Do YYYY, h:mm:ss a')}` });
+  }
+  // ------------------push notification end-----------------
+
+  // Send your reminder logic (email, SMS)
+
+  // ---------send reminder to patient email----------
+  if (occurence?.company_id?.company?.msg_templates?.email?.isActive && patient?.patient?.contactPreferences?.allowEmail) {
+    sendEmail(
+      patient?.email,
+      'Appoinment Reminder',
+      realEmailTemplate
+    );
+  }
+
+  // ---------send reminder to staffs email----------
+  if (occurence?.company_id?.company?.msg_templates?.email?.isActive) {
+
+    for (let staff of staffs) {
+
+      if (staff?.email) {
+        sendEmail(
+          staff?.email,
+          'Appoinment Reminder',
+          realEmailTemplate
+        );
+      }
+
+    }
+  }
+
+  // ---------send sms reminder to patient----------
+  // if (occurence?.company_id?.company?.msg_templates?.sms?.isActive && patient?.patient?.contactPreferences?.allowText && patient?.patient?.phone) {
+  //   sendSMSMessage(
+  //     patient?.patient?.phone,
+  //     // 'Appoinment Reminder',
+  //     realSmsTemplate
+  //   );
+  // }
+
+  return null
+
+}
+
+
+// -----------------------------schedule reminder------------------
+
+agenda.define("send appointment reminder", async (job: any) => {
+
+  console.log("---------reminder schedule called------------")
+
+  const { occurenceId, appointmentId, companyId } = job.attrs.data;
+
+  const res = ReminderFunc(occurenceId)
+
+  return res;
+
+});
+
+
 const generateOccurrences = async (appointment: IIApoinment, companyId: ObjectId): Promise<IOccurrencce[]> => {
+
   const {
     _id: appointmentId,
     start_date,
@@ -75,6 +259,7 @@ const generateOccurrences = async (appointment: IIApoinment, companyId: ObjectId
   const occurrences: IOccurrencce[] = [];
 
   for (let i = 0; i < repeat_count; i++) {
+
     let occurrenceStart = baseStart.clone();
     let occurrenceEnd = baseEnd.clone();
 
@@ -114,34 +299,186 @@ const generateOccurrences = async (appointment: IIApoinment, companyId: ObjectId
       patient_id,
       company_id: companyId
     });
+
   }
 
   return occurrences;
 };
 
 
+function getOffsetInMinutes(reminder: IReminder): number {
+  switch (reminder.time_type) {
+    case "Days": return reminder.long_ago * 24 * 60;
+    case "Hours": return reminder.long_ago * 60;
+    case "Minutes": return reminder.long_ago;
+    default: return 0;
+  }
+}
+
 const createAppointment = async (companyId: string, payload: IIApoinment) => {
+
+  const company = await User.findOne({ _id: new Types.ObjectId(companyId) }).populate({ path: "company" })
+
+  if (!company) {
+    throw new AppError(httpStatus.NOT_FOUND, "Comapny not found")
+  }
+
+  if (!company?.company) {
+    throw new AppError(httpStatus.NOT_FOUND, "Comapny not found")
+  }
+
+  const reminderSchedules = company?.company?.reminderTypes
+
+  //--------------creae root appointment-------------
   const appoin = await Appointment.create({ ...payload, company_id: companyId });
 
   const appointment = appoin.toObject();
 
+  // -----------------generate occurences----------------
   const occurrences = await generateOccurrences({ ...appointment, location: payload?.location }, companyId as unknown as ObjectId);
 
-  const res = await AppointmentOccurrence.insertMany(occurrences);
+  const occurrenceList = await AppointmentOccurrence.insertMany(occurrences);
 
-  return res;
+  //-----------reminder setup based on company setting---------
+  for (let occurence of occurrenceList) {
+    for (const reminder of reminderSchedules) {
+      const offsetMinutes = getOffsetInMinutes(reminder);
+      const reminderTime = new Date(occurence?.start_datetime.getTime() - offsetMinutes * 60 * 1000);
+
+      if (reminderTime > new Date()) {
+        await agenda.schedule(reminderTime, "send appointment reminder", {
+          appointmentId: appoin?._id,
+          occurenceId: occurence?._id,
+          companyId: companyId,
+          type: reminder.msg_type,   // Email or SMS
+          offset: offsetMinutes
+        });
+      }
+    }
+  }
+
+  return occurrenceList;
 };
 
 
-const updateStatusOccurence = async (occurrenceId: string, status: string) => {
-  const res = await AppointmentOccurrence.findByIdAndUpdate(
-    occurrenceId,
-    { status },
-    { new: true }
-  );
-  if (!res) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Appoinment not found');
+const updateStatusOccurence = async (occurrenceId: string, status: string, userId: string) => {
+  const exist = await AppointmentOccurrence.findOne({ _id: occurrenceId }).populate({
+    path: "patient_id",
+    populate: {
+      path: "patient"
+    }
+  })
+    .populate({
+      path: "staff_ids",
+      populate: {
+        path: "staf"
+      }
+    })
+    .populate({
+      path: "company_id",
+      populate: {
+        path: "company"
+      }
+    }).populate({
+      path: "appointment",
+    }) as unknown as IIOccurrencce;
+
+  if (!exist) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Appointment not found');
   }
+
+  const res = await AppointmentOccurrence.updateOne(
+    { _id: occurrenceId },
+    { status }
+  );
+
+  // ----------sent notification if appointment is cancelled-------------
+  if (status == "cancelled") {
+
+    const staffs = exist?.staff_ids;
+    const patient = exist?.patient_id;
+
+    const fcmTokens: string[] = (staffs?.map(i => i?.fcmToken).filter(Boolean)) as string[] || [];
+
+    const notifications = (staffs?.map(i => {
+      if (i?.fcmToken) {
+        return {
+          title: `Appointment Cancelled`,
+          message: `A appointment cancelled at ${moment(exist.start_datetime).format('MMMM Do YYYY, h:mm:ss a')} for ${exist?.patient_id?.name} patient`,
+          receiver: i._id,
+          receiverEmail: i.email,
+          receiverRole: i.role,
+          sender: userId ? new Types.ObjectId(userId) : i._id
+        } satisfies INotification;
+      }
+      return null;
+    }) ?? []).filter((n): n is NonNullable<typeof n> => n !== null);
+
+    // for patient
+    patient?.fcmToken && fcmTokens.push(patient?.fcmToken)
+
+    notifications.push({
+      title: `Appointment Cancelled`,
+      message: `A appointment is cancelled for ${moment(exist.start_datetime).format('MMMM Do YYYY, h:mm:ss a')} date`,
+      receiver: exist?.patient_id?._id,
+      receiverEmail: exist?.patient_id?.email,
+      receiverRole: exist?.patient_id?.role,
+      sender: new Types.ObjectId(userId)
+    })
+
+    if (fcmTokens?.length > 0) {
+      sendNotification(fcmTokens, notifications, { title: `Appointment cancelled`, message: `A appointment is cancelled for ${moment(exist.start_datetime).format('MMMM Do YYYY, h:mm:ss a')} date` });
+    }
+
+    const patient_cancel_temp = path.join(
+      __dirname,
+      '../../public/view/appointment_cancel_patient.html',
+    );
+
+    // ---------send cancelletion email to patient ----------
+    if (exist?.company_id?.company?.msg_templates?.email?.isActive && patient?.patient?.contactPreferences?.allowEmail) {
+      sendEmail(
+        patient?.email,
+        'Appoinment Cancelled',
+        fs
+          .readFileSync(patient_cancel_temp, 'utf8')
+          .replace('{{name}}', patient?.name)
+          .replace('{{service}}', exist?.appointment?.title)
+          .replace('{{start_date}}', moment(exist?.start_datetime).format("MMMM Do YYYY"))
+          .replace('{{start_time}}', moment(exist?.start_datetime).format("h:mm a"))
+          .replace('{{end_time}}', moment(exist?.end_datetime).format("h:mm a"))
+          .replace('{{location}}', exist?.location?.address)
+      );
+    }
+
+    // ---------send reminder to staffs email----------
+    const staff_cancel_temp = path.join(
+      __dirname,
+      '../../public/view/appointment_cancel_staff.html',
+    );
+
+    if (exist?.company_id?.company?.msg_templates?.email?.isActive) {
+      for (let staff of staffs) {
+
+        if (staff?.email) {
+          sendEmail(
+            staff?.email,
+            'Appoinment Cancelled',
+            fs
+              .readFileSync(staff_cancel_temp, 'utf8')
+              .replace('{{name}}', staff?.name)
+              .replace('{{service}}', exist?.appointment?.title)
+              .replace('{{start_date}}', moment(exist?.start_datetime).format("MMMM Do YYYY"))
+              .replace('{{start_time}}', moment(exist?.start_datetime).format("h:mm a"))
+              .replace('{{patient}}', patient?.name)
+              .replace('{{location}}', exist?.location?.address)
+          );
+        }
+      }
+    }
+
+  }
+
   return res;
 };
 
@@ -767,50 +1104,11 @@ const updateAppointment = async (id: string, payload: IIApoinment, companyId: st
   return appointment;
 };
 
-interface IIOccurence extends Omit<IOccurrencce, "staff_ids"> {
-  staff_ids: IUser[]
-}
-
 const sendNotificationReminder = async (occurenceId: string, userId: string) => {
 
-  const occurenceDoc = await AppointmentOccurrence.findOne({ _id: occurenceId }).populate({
-    path: 'staff_ids',
-    select: "-password"
-  });
+  const res = await ReminderFunc(occurenceId, userId)
 
-  if (!occurenceDoc) {
-    throw new AppError(
-      httpStatus.NOT_FOUND,
-      'Appoinment not found',
-    );
-  }
-
-  const occurence = occurenceDoc as unknown as IIOccurence
-
-  const staffs = occurence?.staff_ids;
-
-  const fcmTokens: string[] = (staffs?.map(i => i?.fcmToken).filter(Boolean)) as string[] || [];
-
-  const notifications = (staffs?.map(i => {
-    if (i?.fcmToken) {
-      return {
-        title: `Appointment Reminder`,
-        message: `New appointment coming at ${moment(occurence.start_datetime).format('MMMM Do YYYY, h:mm:ss a')}`,
-        receiver: i._id,
-        receiverEmail: i.email,
-        receiverRole: i.role,
-        sender: new Types.ObjectId(userId)
-      } satisfies INotification;
-    }
-    return null;
-  }) ?? []).filter((n): n is NonNullable<typeof n> => n !== null);
-
-  if (fcmTokens?.length > 0) {
-    await sendNotification(fcmTokens, notifications, { title: `Appoinment Reminder`, message: `New appoinment coming at ${moment(occurence?.start_datetime).format('MMMM Do YYYY, h:mm:ss a')}` });
-  }
-
-  return null;
-
+  return res;
 }
 
 

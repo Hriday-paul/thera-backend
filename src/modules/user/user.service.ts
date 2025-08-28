@@ -117,12 +117,12 @@ const add_new_staff = async (payload: IIStaf, image: string, company_id: string)
 
 // all staffs by company
 const staffs = async (company_id: string) => {
-    const res = await User.find({ role: "staf", staf_company_id: company_id }).populate("staf");
+    const res = await User.find({ role: "staf", staf_company_id: company_id, isDisable : false, isDeleted : false, status : 1 }).populate("staf");
     return res;
 }
 
 // add new patient
-const add_new_Patient = async (payload: IIPatient, image : string, company_id: string) => {
+const add_new_Patient = async (payload: IIPatient, image: string, company_id: string) => {
     const {
         email,
         password = '',
@@ -166,6 +166,20 @@ const add_new_Patient = async (payload: IIPatient, image : string, company_id: s
 }
 
 
+const deletePatient = async (patientid: string, company_id: string) => {
+    const exist = await User.findOne({ _id: patientid, role: "patient" });
+    if (!exist) {
+        throw new AppError(httpStatus.NOT_FOUND, "User not found")
+    }
+    if (exist?.patient_company_id.toString() !== company_id) {
+        throw new AppError(httpStatus.FORBIDDEN, "You are not owner of this company")
+    }
+    const res = await User.updateOne({ _id: patientid }, { isDeleted: true })
+    return res;
+}
+
+
+
 export const userService = {
     updateProfile,
     getUserById,
@@ -173,5 +187,6 @@ export const userService = {
     status_update_user,
     add_new_staff,
     staffs,
-    add_new_Patient
+    add_new_Patient,
+    deletePatient
 }

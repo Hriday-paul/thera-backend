@@ -76,9 +76,9 @@ export interface IAutomation {
 }
 
 export interface IReminder {
-  msg_type: string,
+  msg_type: "Email" | "SMS",
   long_ago: number,
-  time_type: string
+  time_type: "Hours" | "Minutes" | "Days"
 }
 
 export interface IMsgTemplate {
@@ -92,13 +92,14 @@ export interface IMsgTemplate {
   }
 }
 
-export interface Ipatienttag{
-  name : string
+export interface Ipatienttag {
+  name: string
 }
 
 export interface ICompany {
   // title: string,
   // full_name: string,
+  _id: Types.ObjectId;
   organization_name: string,
   site_short_name: string,
   legal_organization_name: string,
@@ -153,12 +154,13 @@ export interface ICompany {
   reminderTypes: IReminder[],
   msg_templates: IMsgTemplate,
 
-  patient_tags : Ipatienttag[]
+  patient_tags: Ipatienttag[]
 }
 
 
 
 export interface IStaf {
+  _id: Types.ObjectId;
   name_title: string,
   f_name: string,
   middle_name?: string,
@@ -218,6 +220,7 @@ export interface IBilling {
 }
 
 export interface IPatient {
+  _id: Types.ObjectId;
   name_title: string,
   f_name: string,
   middle_name?: string,
