@@ -139,7 +139,7 @@ const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
 const workScheduleSchema = new Schema({
   day: { type: String, required: true },
   willWork: { type: Boolean, required: true },
-  times: { type: [Date], required: true },
+  times: { type: [String], required: true },
 }, { _id: false });
 
 

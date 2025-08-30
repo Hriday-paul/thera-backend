@@ -39,7 +39,7 @@ interface IIOccurrencce {
   status: "upcoming" | "completed" | "cancelled" | "no_show"
 }
 
-const ReminderFunc = async (occurenceId: string, userId?: string) => {
+const ReminderFunc = async ({ occurenceId, msgType, userId }: { occurenceId: string, msgType?: string, userId?: string }) => {
 
   const occurence = await AppointmentOccurrence.findOne({ _id: new Types.ObjectId(occurenceId) })
     .populate({
@@ -150,7 +150,7 @@ const ReminderFunc = async (occurenceId: string, userId?: string) => {
   // Send your reminder logic (email, SMS)
 
   // ---------send reminder to patient email----------
-  if (occurence?.company_id?.company?.msg_templates?.email?.isActive && patient?.patient?.contactPreferences?.allowEmail) {
+  if (occurence?.company_id?.company?.msg_templates?.email?.isActive && patient?.patient?.contactPreferences?.allowEmail && (!msgType || msgType == "Email")) {
     sendEmail(
       patient?.email,
       'Appoinment Reminder',
@@ -159,7 +159,7 @@ const ReminderFunc = async (occurenceId: string, userId?: string) => {
   }
 
   // ---------send reminder to staffs email----------
-  if (occurence?.company_id?.company?.msg_templates?.email?.isActive) {
+  if (occurence?.company_id?.company?.msg_templates?.email?.isActive && (!msgType || msgType == "Email")) {
 
     for (let staff of staffs) {
 
@@ -175,7 +175,7 @@ const ReminderFunc = async (occurenceId: string, userId?: string) => {
   }
 
   // ---------send sms reminder to patient----------
-  // if (occurence?.company_id?.company?.msg_templates?.sms?.isActive && patient?.patient?.contactPreferences?.allowText && patient?.patient?.phone) {
+  // if (occurence?.company_id?.company?.msg_templates?.sms?.isActive && patient?.patient?.contactPreferences?.allowText && patient?.patient?.phone && (!msgType || msgType == "SMS")) {
   //   sendSMSMessage(
   //     patient?.patient?.phone,
   //     // 'Appoinment Reminder',
@@ -194,9 +194,9 @@ agenda.define("send appointment reminder", async (job: any) => {
 
   console.log("---------reminder schedule called------------")
 
-  const { occurenceId, appointmentId, companyId } = job.attrs.data;
+  const { occurenceId, appointmentId, companyId, type } = job.attrs.data;
 
-  const res = ReminderFunc(occurenceId)
+  const res = ReminderFunc({ occurenceId, msgType: type })
 
   return res;
 
@@ -362,6 +362,7 @@ const createAppointment = async (companyId: string, payload: IIApoinment) => {
 
 
 const updateStatusOccurence = async (occurrenceId: string, status: string, userId: string) => {
+
   const exist = await AppointmentOccurrence.findOne({ _id: occurrenceId }).populate({
     path: "patient_id",
     populate: {
@@ -495,35 +496,181 @@ const markStaffUnavailable = async (staff_id: string, payload: IStaffUnavilibili
 };
 
 
+// const getFreeStaff = async (req_date: string, time: string, companyId: string) => {
+
+//   const date = new Date(req_date);
+//   const timeDate = new Date(time);
+
+//   // console.log(date, time)
+
+//   const weekday = date.toLocaleString('en-US', { weekday: 'long' });
+
+//   interface ISStaff extends IUser {
+//     staf: IStaf
+//   }
+
+//   // Step 1: Get all staff who are scheduled to work on that day
+
+//   const availableUsers = await User.aggregate([
+//     {
+//       $match: {
+//         role: "staf",
+//         staf_company_id: new Types.ObjectId(companyId)
+//       }
+//     },
+//     {
+//       $lookup: {
+//         from: "stafs",
+//         localField: "staf",
+//         foreignField: "_id",
+//         as: "staf"
+//       }
+//     },
+//     { $unwind: "$staf" },
+//     {
+//       $project: {
+//         name: 1,
+//         email: 1,
+//         image: 1,
+//         "staf.work_schedule": 1,
+//         "staf.offDays": 1,
+//         "staf._id": 1,
+//         "staf.f_name": 1,
+//         "staf.middle_name": 1,
+//         "staf.last_name": 1
+//       }
+//     },
+//     {
+//       $match: {
+//         $expr: {
+//           $gt: [
+//             {
+//               $size: {
+//                 $filter: {
+//                   input: "$staf.work_schedule",
+//                   as: "ws",
+//                   cond: {
+//                     $and: [
+//                       { $eq: ["$$ws.day", weekday] },
+//                       { $eq: ["$$ws.willWork", true] },
+//                       {
+//                         $let: {
+//                           vars: {
+//                             startTime: { $arrayElemAt: ["$$ws.times", 0] },
+//                             endTime: { $arrayElemAt: ["$$ws.times", 1] },
+//                             inputTime: timeDate
+//                           },
+//                           in: {
+//                             $and: [
+//                               {
+//                                 $lte: [
+//                                   {
+//                                     $add: [
+//                                       { $multiply: [{ $hour: "$$startTime" }, 3600] },
+//                                       { $multiply: [{ $minute: "$$startTime" }, 60] },
+//                                       { $second: "$$startTime" }
+//                                     ]
+//                                   },
+//                                   {
+//                                     $add: [
+//                                       { $multiply: [{ $hour: "$$inputTime" }, 3600] },
+//                                       { $multiply: [{ $minute: "$$inputTime" }, 60] },
+//                                       { $second: "$$inputTime" }
+//                                     ]
+//                                   }
+//                                 ]
+//                               },
+//                               {
+//                                 $gte: [
+//                                   {
+//                                     $add: [
+//                                       { $multiply: [{ $hour: "$$endTime" }, 3600] },
+//                                       { $multiply: [{ $minute: "$$endTime" }, 60] },
+//                                       { $second: "$$endTime" }
+//                                     ]
+//                                   },
+//                                   {
+//                                     $add: [
+//                                       { $multiply: [{ $hour: "$$inputTime" }, 3600] },
+//                                       { $multiply: [{ $minute: "$$inputTime" }, 60] },
+//                                       { $second: "$$inputTime" }
+//                                     ]
+//                                   }
+//                                 ]
+//                               }
+//                             ]
+//                           }
+//                         }
+//                       }
+//                     ]
+//                   }
+//                 }
+//               }
+//             },
+//             0
+//           ]
+//         }
+//       }
+//     }
+//   ]) as ISStaff[];
+
+//   const finalFreeStaff = [];
+
+//   for (const user of availableUsers) {
+
+//     const isOff = user?.staf.offDays.some(off => {
+//       if (off.dates.some(d => isSameDay(d, date))) return true;
+
+//       if (off.repeat && off.repeat_type === 'weekly') {
+//         return getDay(date) === getDay(off.dates[0]); // same weekday
+//       }
+
+//       return false;
+//     });
+
+//     if (isOff) continue;
+
+//     const hasConflict = await AppointmentOccurrence.exists({
+//       staff_ids: { $in: [new Types.ObjectId(user._id)] },
+//       start_datetime: { $lte: timeDate },
+//       end_datetime: { $gte: timeDate },
+//       status: { $ne: 'cancelled' }
+//     })
+
+//     if (!hasConflict) {
+//       finalFreeStaff.push(user);
+//     }
+
+//   }
+
+//   return finalFreeStaff;
+// };
+
 const getFreeStaff = async (req_date: string, time: string, companyId: string) => {
-
   const date = new Date(req_date);
-  const timeDate = new Date(time);
+  const inputTime = moment(time); // appointment time
 
-  // console.log(date, time)
-
-  const weekday = date.toLocaleString('en-US', { weekday: 'long' });
+  const weekday = date.toLocaleString("en-US", { weekday: "long" });
 
   interface ISStaff extends IUser {
-    staf: IStaf
+    staf: IStaf;
   }
 
-  // Step 1: Get all staff who are scheduled to work on that day
-
-  const availableUsers = await User.aggregate([
+  // Step 1: Fetch all staff from this company
+  const staffList = (await User.aggregate([
     {
       $match: {
         role: "staf",
-        staf_company_id: new Types.ObjectId(companyId)
-      }
+        staf_company_id: new Types.ObjectId(companyId),
+      },
     },
     {
       $lookup: {
         from: "stafs",
         localField: "staf",
         foreignField: "_id",
-        as: "staf"
-      }
+        as: "staf",
+      },
     },
     { $unwind: "$staf" },
     {
@@ -536,92 +683,59 @@ const getFreeStaff = async (req_date: string, time: string, companyId: string) =
         "staf._id": 1,
         "staf.f_name": 1,
         "staf.middle_name": 1,
-        "staf.last_name": 1
-      }
+        "staf.last_name": 1,
+      },
     },
-    {
-      $match: {
-        $expr: {
-          $gt: [
-            {
-              $size: {
-                $filter: {
-                  input: "$staf.work_schedule",
-                  as: "ws",
-                  cond: {
-                    $and: [
-                      { $eq: ["$$ws.day", weekday] },
-                      { $eq: ["$$ws.willWork", true] },
-                      {
-                        $let: {
-                          vars: {
-                            startTime: { $arrayElemAt: ["$$ws.times", 0] },
-                            endTime: { $arrayElemAt: ["$$ws.times", 1] },
-                            inputTime: timeDate
-                          },
-                          in: {
-                            $and: [
-                              {
-                                $lte: [
-                                  {
-                                    $add: [
-                                      { $multiply: [{ $hour: "$$startTime" }, 3600] },
-                                      { $multiply: [{ $minute: "$$startTime" }, 60] },
-                                      { $second: "$$startTime" }
-                                    ]
-                                  },
-                                  {
-                                    $add: [
-                                      { $multiply: [{ $hour: "$$inputTime" }, 3600] },
-                                      { $multiply: [{ $minute: "$$inputTime" }, 60] },
-                                      { $second: "$$inputTime" }
-                                    ]
-                                  }
-                                ]
-                              },
-                              {
-                                $gte: [
-                                  {
-                                    $add: [
-                                      { $multiply: [{ $hour: "$$endTime" }, 3600] },
-                                      { $multiply: [{ $minute: "$$endTime" }, 60] },
-                                      { $second: "$$endTime" }
-                                    ]
-                                  },
-                                  {
-                                    $add: [
-                                      { $multiply: [{ $hour: "$$inputTime" }, 3600] },
-                                      { $multiply: [{ $minute: "$$inputTime" }, 60] },
-                                      { $second: "$$inputTime" }
-                                    ]
-                                  }
-                                ]
-                              }
-                            ]
-                          }
-                        }
-                      }
-                    ]
-                  }
-                }
-              }
-            },
-            0
-          ]
-        }
+  ])) as ISStaff[];
+
+  const finalFreeStaff: ISStaff[] = [];
+
+  for (const user of staffList) {
+    // --- Check Work Schedule ---
+    const scheduleForDay = user.staf.work_schedule.find(
+      (ws) => ws.day === weekday && ws.willWork
+    );
+
+    if (!scheduleForDay || scheduleForDay.times.length !== 2) continue;
+
+    const [startStr, endStr] = scheduleForDay.times; // ["09:00", "18:00"]
+    const startTime = moment(startStr, "HH:mm");
+    const endTime = moment(endStr, "HH:mm");
+
+    // normalize inputTime to only HH:mm
+    const inputTimeOfDay = moment()
+      .hour(inputTime.hour())
+      .minute(inputTime.minute())
+      .second(0);
+
+    const isWithinSchedule =
+      inputTimeOfDay.isSame(startTime) ||
+      inputTimeOfDay.isSame(endTime) ||
+      (inputTimeOfDay.isAfter(startTime) && inputTimeOfDay.isBefore(endTime));
+
+    if (!isWithinSchedule) continue;
+
+    // --- Check OffDays / Holidays ---
+    const isOff = user.staf.offDays.some((off) => {
+      // Exact date match
+      if (off.dates.some((d) => isSameDay(new Date(d), date))) return true;
+
+      // Weekly repeat
+      if (off.repeat && off.repeat_type === "Weekly") {
+        return getDay(date) === getDay(new Date(off.dates[0]));
       }
-    }
-  ]) as ISStaff[];
 
-  const finalFreeStaff = [];
+      // Monthly repeat
+      if (off.repeat && off.repeat_type === "Monthly") {
+        return date.getDate() === new Date(off.dates[0]).getDate();
+      }
 
-  for (const user of availableUsers) {
-
-    const isOff = user?.staf.offDays.some(off => {
-      if (off.dates.some(d => isSameDay(d, date))) return true;
-
-      if (off.repeat && off.repeat_type === 'weekly') {
-        return getDay(date) === getDay(off.dates[0]); // same weekday
+      // Yearly repeat
+      if (off.repeat && off.repeat_type === "Yearly") {
+        return (
+          date.getDate() === new Date(off.dates[0]).getDate() &&
+          date.getMonth() === new Date(off.dates[0]).getMonth()
+        );
       }
 
       return false;
@@ -629,22 +743,22 @@ const getFreeStaff = async (req_date: string, time: string, companyId: string) =
 
     if (isOff) continue;
 
+    // --- Check Appointment Conflicts ---
     const hasConflict = await AppointmentOccurrence.exists({
       staff_ids: { $in: [new Types.ObjectId(user._id)] },
-      start_datetime: { $lte: timeDate },
-      end_datetime: { $gte: timeDate },
-      status: { $ne: 'cancelled' }
-    })
+      start_datetime: { $lte: time },
+      end_datetime: { $gte: time },
+      status: { $ne: "cancelled" },
+    });
 
-    if (!hasConflict) {
-      finalFreeStaff.push(user);
-    }
+    if (hasConflict) continue;
 
+    // If passed all conditions, staff is free
+    finalFreeStaff.push(user);
   }
 
   return finalFreeStaff;
 };
-
 
 const allAppointments_byCompany_WithStaffStatus = async (companyId: string, query: Record<string, any>) => {
 
@@ -1075,7 +1189,33 @@ const getMonthlyAppointmentStats = async (query: Record<string, any>): Promise<A
 
 
 
-const updateAppointment = async (id: string, payload: IIApoinment, companyId: string) => {
+const updateAppointment = async (id: string, payload: IIApoinment, occurenceId: string, userId: string) => {
+
+  const {
+    start_date,
+    times,
+    staff_ids,
+    location,
+  } = payload;
+
+  const [start, end] = times;
+
+  const start_time = moment(start_date)
+    .set({
+      hour: moment(start).hour(),
+      minute: moment(start).minute(),
+      second: moment(start).second(),
+      millisecond: moment(start).millisecond(),
+    });
+
+  const end_time = moment(start_date)
+    .set({
+      hour: moment(end).hour(),
+      minute: moment(end).minute(),
+      second: moment(end).second(),
+      millisecond: moment(end).millisecond(),
+    });
+
   const appointment = await Appointment.findByIdAndUpdate(id, payload, { new: true });
 
   if (!appointment) {
@@ -1085,28 +1225,119 @@ const updateAppointment = async (id: string, payload: IIApoinment, companyId: st
     );
   }
 
-  const allOccurrences = await AppointmentOccurrence.find({ appointment: id });
+  const Occurrences = await AppointmentOccurrence.updateOne({ _id: occurenceId }, { staff_ids, start_datetime: start_time, end_datetime: end_time, location });
 
-  const completedIds = allOccurrences
-    .filter(o => o.status === "completed")
-    .map(o => o._id.toString());
+  const exist = await AppointmentOccurrence.findOne({ _id: occurenceId }).populate({
+    path: "patient_id",
+    populate: {
+      path: "patient"
+    }
+  })
+    .populate({
+      path: "staff_ids",
+      populate: {
+        path: "staf"
+      }
+    })
+    .populate({
+      path: "company_id",
+      populate: {
+        path: "company"
+      }
+    }).populate({
+      path: "appointment",
+    }) as unknown as IIOccurrencce;
 
-  // Delete only non-completed occurrences
-  await AppointmentOccurrence.deleteMany({
-    appointment: id,
-    _id: { $nin: completedIds }
-  });
+  const staffs = exist?.staff_ids;
+  const patient = exist?.patient_id;
 
-  const newOccurrences = await generateOccurrences({ ...appointment, location: payload?.location }, companyId as unknown as ObjectId);
-  await AppointmentOccurrence.insertMany(newOccurrences);
+  const fcmTokens: string[] = (staffs?.map(i => i?.fcmToken).filter(Boolean)) as string[] || [];
+
+  const notifications = (staffs?.map(i => {
+    if (i?.fcmToken) {
+      return {
+        title: `Appointment Updated`,
+        message: `A appointment Updated at ${moment(exist.start_datetime).format('MMMM Do YYYY, h:mm:ss a')} for ${exist?.patient_id?.name} patient`,
+        receiver: i._id,
+        receiverEmail: i.email,
+        receiverRole: i.role,
+        sender: userId ? new Types.ObjectId(userId) : i._id
+      } satisfies INotification;
+    }
+    return null;
+  }) ?? []).filter((n): n is NonNullable<typeof n> => n !== null);
+
+  // for patient
+  patient?.fcmToken && fcmTokens.push(patient?.fcmToken)
+
+  notifications.push({
+    title: `Appointment Updated`,
+    message: `A Appointment Updated to ${moment(exist.start_datetime).format('MMMM Do YYYY, h:mm:ss a')} date`,
+    receiver: exist?.patient_id?._id,
+    receiverEmail: exist?.patient_id?.email,
+    receiverRole: exist?.patient_id?.role,
+    sender: new Types.ObjectId(userId)
+  })
+
+  if (fcmTokens?.length > 0) {
+    sendNotification(fcmTokens, notifications, { title: `Appointment Updated`, message: `A appointment is Updated to ${moment(exist.start_datetime).format('MMMM Do YYYY, h:mm:ss a')} date` });
+  }
+
+  const patient_cancel_temp = path.join(
+    __dirname,
+    '../../public/view/appointment_reschedule_patient.html',
+  );
+
+  // ---------send cancelletion email to patient ----------
+  if (exist?.company_id?.company?.msg_templates?.email?.isActive && patient?.patient?.contactPreferences?.allowEmail) {
+    sendEmail(
+      patient?.email,
+      'Appoinment Updated',
+      fs
+        .readFileSync(patient_cancel_temp, 'utf8')
+        .replace('{{name}}', patient?.name)
+        .replace('{{service}}', exist?.appointment?.title)
+        .replace('{{start_date}}', moment(exist?.start_datetime).format("MMMM Do YYYY"))
+        .replace('{{start_time}}', moment(exist?.start_datetime).format("h:mm a"))
+        .replace('{{end_time}}', moment(exist?.end_datetime).format("h:mm a"))
+        .replace('{{location}}', exist?.location?.address)
+    );
+  }
+
+  // ---------send reminder to staffs email----------
+  const staff_cancel_temp = path.join(
+    __dirname,
+    '../../public/view/appointment_reschedule_staff.html',
+  );
+
+  if (exist?.company_id?.company?.msg_templates?.email?.isActive) {
+    for (let staff of staffs) {
+
+      if (staff?.email) {
+        sendEmail(
+          staff?.email,
+          'Appoinment Updated',
+          fs
+            .readFileSync(staff_cancel_temp, 'utf8')
+            .replace('{{name}}', staff?.name)
+            .replace('{{service}}', exist?.appointment?.title)
+            .replace('{{start_date}}', moment(exist?.start_datetime).format("MMMM Do YYYY"))
+            .replace('{{start_time}}', moment(exist?.start_datetime).format("h:mm a"))
+            .replace('{{patient}}', patient?.name)
+            .replace('{{location}}', exist?.location?.address)
+        );
+      }
+    }
+  }
 
 
   return appointment;
 };
 
+
 const sendNotificationReminder = async (occurenceId: string, userId: string) => {
 
-  const res = await ReminderFunc(occurenceId, userId)
+  const res = await ReminderFunc({ occurenceId, userId })
 
   return res;
 }

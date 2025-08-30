@@ -19,6 +19,18 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
     });
 })
 
+const updateAppointment = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await appoinmentsService.updateAppointment(req.body?.appointment, req.body, req?.params?.id, req?.user?._id);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Appoinment updated successfully',
+        data: result,
+    });
+})
+
 const createAppointmentForStaff = catchAsync(async (req: Request, res: Response) => {
 
     const staff = await User.findById(req?.user?._id);
@@ -291,6 +303,7 @@ const appoinmentChartByPatient = catchAsync(async (req: Request, res: Response) 
 
 export const appoinmentControler = {
     createAppointment,
+    updateAppointment,
     createAppointmentForStaff,
     getFreeStaff,
     as_a_staff_getFreeStaffMyCompany,

@@ -97,6 +97,7 @@ const patientsListsWithAppoinmentHistory = catchAsync(async (req: Request, res: 
         data: result,
     });
 });
+
 //all patients by staff
 const byStaff_patientsListsWithAppoinmentHistory = catchAsync(async (req: Request, res: Response) => {
 

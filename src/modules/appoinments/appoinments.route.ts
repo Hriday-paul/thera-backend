@@ -2,7 +2,7 @@ import { Router } from "express";
 import auth from "../../middleware/auth";
 import { USER_ROLE } from "../user/user.constants";
 import { appoinmentControler } from "./appoinments.controler";
-import { AppointmentReminderValidate, AppointmentStaffUnavailble, AppointmentStatusValidate, createAppointmentValidate, validateMonthYear } from "./appoinments.validator";
+import { AppointmentReminderValidate, AppointmentStaffUnavailble, AppointmentStatusValidate, createAppointmentValidate, updateAppointmentValidate, validateMonthYear } from "./appoinments.validator";
 import req_validator from "../../middleware/req_validation";
 
 const router = Router();
@@ -12,6 +12,13 @@ router.post("/",
     req_validator(),
     auth(USER_ROLE.company),
     appoinmentControler.createAppointment
+)
+
+router.put("/:id",
+    updateAppointmentValidate,
+    req_validator(),
+    auth(USER_ROLE.company, USER_ROLE.staf),
+    appoinmentControler.updateAppointment
 )
 
 router.post("/by-staf",
