@@ -42,7 +42,7 @@ const getMyChatList = async (userId: string, searchText?: string) => {
   const searchTerm = searchText ?? ""
 
   const chats = await Chat.find({
-    participants: { $all: userId },
+    participants: { $all: [userId] },
   }).populate({
     path: 'participants',
     select: 'email name role _id image',
@@ -65,7 +65,7 @@ const getMyChatList = async (userId: string, searchText?: string) => {
     const chatId = chatItem?._id;
 
     if (chatItem?.participants?.length <= 0) {
-      break;
+      continue;
     }
 
     // Find the latest message in the chat

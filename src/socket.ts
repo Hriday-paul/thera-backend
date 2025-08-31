@@ -163,7 +163,11 @@ const initializeSocketIO = (server: HttpServer) => {
         try {
           const { searchTerm } = data;
 
+          console.log(searchTerm)
+
           const chatList = await chatService.getMyChatList(user?._id, searchTerm);
+
+          console.log(chatList.length)
           const myChat = 'chat-list::' + user?._id;
 
           io.emit(myChat, chatList);
@@ -331,11 +335,18 @@ const initializeSocketIO = (server: HttpServer) => {
           });
         }
 
-        const receiverMessage = 'new-message::' + payload.chat.toString();
-        // const senderMessage = 'new-message::' + user?._id.toString();
+        // const receiverMessage = 'new-message::' + payload.chat.toString();
+        const receiverMessage = 'new-message::' + payload.sender;
+        const senderMessage = 'sent-message::' + payload.receiver;
+
+        // const receiverMessage = 'new-message::' + payload.sender;
+        // const senderMessage = 'sent-message::' + payload.sender; // FIXED
+
+
+        // console.log( senderMessage)
 
         io.emit(receiverMessage, result);
-        // io.emit(senderMessage, result);
+        io.emit(senderMessage, result);
 
         // //----------------------ChatList------------------------//
         const ChatListSender = await chatService.getMyChatList(

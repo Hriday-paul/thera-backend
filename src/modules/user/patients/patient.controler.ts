@@ -117,7 +117,7 @@ const byStaff_patientsListsWithAppoinmentHistory = catchAsync(async (req: Reques
         );
     };
 
-    const result = await PatientService.patientsListsWithAppoinmentHistory(user?.staf_company_id as unknown as string, req.query);
+    const result = await PatientService.patientsListsWithAppoinmentHistory(user?.staf_company_id.toString(), req.query);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
