@@ -5,24 +5,24 @@ import { IIStaf } from "../user.interface";
 import { Staf, User } from "../user.models";
 import httpStatus from "http-status";
 
-// const StaffsList = async (company: string, query: Record<string, any>) => {
+const StaffsList = async (company: string, query: Record<string, any>) => {
 
-//     const staffModel = new QueryBuilder(User.find({ role: "staf", staf_company_id: company, isDeleted: false }).select("-password").populate({
-//         path: "staf",
-//         select: "-_id"
-//     }), query)
-//         .search(["name", "email"])
-//         .filter()
-//         .sort()
-//         .paginate();
+    const staffModel = new QueryBuilder(User.find({ role: "staf", staf_company_id: company, isDeleted: false }).select("-password").populate({
+        path: "staf",
+        select: "-_id"
+    }), query)
+        .search(["name", "email"])
+        .filter()
+        .sort()
+        .paginate();
 
-//     const data: any = await staffModel.modelQuery;
-//     const meta = await staffModel.countTotal();
+    const data: any = await staffModel.modelQuery.lean();
+    const meta = await staffModel.countTotal();
 
-//     return { meta, data };
-// };
+    return { meta, data };
+};
 
-const StaffsList = async (companyId: string, query: Record<string, any>) => {
+const StaffsListWithAppointmentStatus = async (companyId: string, query: Record<string, any>) => {
     const page = query?.page || 1;
     const limit = query.limit || 10;
     const skip = (page - 1) * limit;
@@ -197,7 +197,8 @@ const updateStaff = async (staffId: string, payload: IIStaf) => {
 
 
 export const StaffService = {
-    StaffsList,
+    StaffsList: StaffsListWithAppointmentStatus,
     StaffProfile,
-    updateStaff
+    updateStaff,
+    allStaff: StaffsList
 }

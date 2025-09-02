@@ -7,6 +7,7 @@ import config from "../../../config";
 import { User } from "../user.models";
 import AppError from "../../../error/AppError";
 import { Types } from "mongoose";
+import excelJs from "exceljs"
 
 //get patients profile
 const patientprofile = catchAsync(async (req: Request, res: Response) => {
@@ -309,6 +310,137 @@ const updatePatientNotificationStatus = catchAsync(async (req: Request, res: Res
     });
 });
 
+const exportPatients = catchAsync(async (req: Request, res: Response) => {
+
+
+    const patients = await PatientService.allPatientsByCompany(req?.user?._id);
+
+    const workbook = new excelJs.Workbook();
+    const workSheet = workbook.addWorksheet("Patients");
+
+    workSheet.columns = [
+        { header: "ID", key: "_id" },
+        { header: "Title", key: "name_title" },
+        { header: "First Name", key: "f_name" },
+        { header: "Middle Name", key: "middle_name" },
+        { header: "Last Name", key: "last_name" },
+        { header: "Preferred Name", key: "preferred_name" },
+        { header: "Email", key: "Email" },
+        { header: "Image", key: "image" },
+        { header: "status", key: "status" },
+        { header: "Gender", key: "gender" },
+        { header: "Sexual Orientation", key: "sexual_orientation" },
+        { header: "Date of Birth", key: "date_of_birth" },
+        { header: "Country", key: "country" },
+        { header: "State", key: "state" },
+        { header: "Zip Code", key: "zip_code" },
+        { header: "Street", key: "street" },
+        { header: "Phone", key: "phone" },
+        { header: "Address", key: "address" },
+        { header: "SSN", key: "ssn" },
+        { header: "Ethnicity", key: "ethnicity" },
+        { header: "Marital Status", key: "marital_status" },
+        { header: "Religion", key: "religion" },
+        { header: "Language", key: "language" },
+        { header: "Employment Status", key: "employment_status" },
+        { header: "Employer", key: "employer" },
+        { header: "Employer Email", key: "employer_email" },
+        { header: "Employer Phone", key: "employer_phone" },
+        { header: "Assigned Staffs", key: "assign_stafs" },
+
+        // contacts (flatten as string if array of objects)
+        { header: "Contacts", key: "contacts" },
+
+        // family group
+        { header: "Family Group", key: "familyGroup" },
+
+        // billing
+        { header: "Billing Details", key: "billing_details" },
+
+        // legal & directives
+        { header: "Legal Date", key: "legal_date" },
+        { header: "Living Will", key: "livingWill" },
+        { header: "Advance Directives", key: "advanceDirectives" },
+        { header: "Has DPOA", key: "hasDPOA" },
+        { header: "DPOA Name", key: "dpoaName" },
+        { header: "DPOA On File", key: "dpoaOnFile" },
+        { header: "DPOA Address", key: "dpoaAddress" },
+        { header: "DPOA Phone", key: "dpoaPhone" },
+        { header: "Proxy Name", key: "proxyName" },
+        { header: "Proxy Address", key: "proxyAddress" },
+        { header: "Proxy Email", key: "proxyEmail" },
+        { header: "Proxy Phone", key: "proxyPhone" },
+
+        // physician info
+        { header: "Clinic Name", key: "clinicName" },
+        { header: "Primary Physician", key: "primaryPhysician" },
+        { header: "Physician Address", key: "physicianAddress" },
+        { header: "Physician Phone", key: "physicianPhone" },
+        { header: "Visit Date", key: "visitDate" },
+
+        // health info
+        { header: "Chronic Illnesses", key: "chronicIllnesses" },
+        { header: "Medications", key: "medications" },
+        { header: "Health Care Providers", key: "healthCareProviders" },
+        { header: "Medical Diagnoses", key: "medicalDiagnoses" },
+        { header: "Date", key: "date" },
+
+        // housing & family info
+        { header: "Residence Type", key: "residenceType" },
+        { header: "Family Type", key: "familyType" },
+        { header: "Residence Ownership", key: "residenceOwnership" },
+        { header: "Household Size", key: "householdSize" },
+        { header: "Living With", key: "livingWith" },
+        { header: "Support Services", key: "supportServices1" },
+        { header: "Housing Notes", key: "housingNotes" },
+
+        // ADL (activities of daily living)
+        { header: "Light Housekeeping", key: "lightHousekeeping" },
+        { header: "Heavy Housekeeping", key: "heavyHousekeeping" },
+        { header: "General Shopping", key: "generalShopping" },
+        { header: "Own Shopping", key: "ownShopping" },
+        { header: "Drives", key: "drives" },
+        { header: "Prepare Meal", key: "prepareMeal" },
+        { header: "Manage Money", key: "manageMoney" },
+        { header: "Use Telephone", key: "useTelephone" },
+        { header: "Bathing", key: "bathing" },
+        { header: "Toilet Use", key: "toiletUse" },
+        { header: "ADL Shopping", key: "adlShopping" },
+
+        // financial
+        { header: "Family Income", key: "family_income" },
+        { header: "Family Income Type", key: "family_income_type" },
+        { header: "Payment Amount", key: "payment_amount" },
+
+        // insurance
+        { header: "Has Insurance", key: "hasInsurance" },
+        { header: "Insurances", key: "insurances" },
+
+        // preferences
+        { header: "Contact Preferences", key: "contactPreferences" },
+    ];
+
+    for (let user of patients) {
+        const row = { ...user, ...user?.patient }
+        workSheet.addRow(row);
+    }
+
+    workSheet.getRow(1).eachCell((cell) => {
+        cell.font = { bold: true };
+    });
+
+    res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    res.setHeader("Content-Disposition", `attachement; filename=patients.xlsx`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+});
+
 export const PatientController = {
     patientprofile,
     myPatientprofile,
@@ -334,5 +466,7 @@ export const PatientController = {
     patientStats,
     patientStatsForMyProfile,
     reportKeyPerformance,
-    updatePatientNotificationStatus
+    updatePatientNotificationStatus,
+
+    exportPatients
 }

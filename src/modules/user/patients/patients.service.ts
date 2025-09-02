@@ -24,9 +24,9 @@ const allPatientsByCompany = async (companyId: string) => {
             path: "assign_stafs",
             select: "-password"
         }
-    });
+    }).lean();
     return res;
-}
+} 
 
 const updatePatient = async (patientId: string, payload: IIPatient) => {
 

@@ -91,4 +91,10 @@ router.get(
     StaffsController.staffprofile,
 );
 
+router.post(
+    '/export',
+    auth(USER_ROLE.company),
+    StaffsController.exportstaffs,
+);
+
 export const StaffRouts = router;

@@ -182,4 +182,11 @@ router.get(
     PatientController.reportKeyPerformance,
 );
 
+
+router.post(
+    '/export',
+    auth(USER_ROLE.company),
+    PatientController.exportPatients,
+);
+
 export const PatientRouts = router;

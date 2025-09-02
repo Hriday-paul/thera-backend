@@ -791,7 +791,7 @@ const allAppointments_byCompany_WithStaffStatus = async (companyId: string, quer
         pipeline: [
           {
             $project: {
-              password: 0 // X exclude password
+              password: 0
             }
           }
         ]
@@ -815,15 +815,15 @@ const allAppointments_byCompany_WithStaffStatus = async (companyId: string, quer
     { $unwind: '$staffInfo' },
     {
       $lookup: {
-        from: 'staffunavailabilities', // কালেকশন নাম lowercase plural হবে
+        from: 'staffunavailabilities',
         let: { staffId: '$staff_ids', occurrenceId: '$_id' },
         pipeline: [
           {
             $match: {
               $expr: {
                 $and: [
-                  { $eq: ['$staff_id', '$$staffId'] }, // ✅ ঠিক ফিল্ড নাম
-                  { $eq: ['$occurrence_id', '$$occurrenceId'] } // ✅ ঠিক ফিল্ড নাম
+                  { $eq: ['$staff_id', '$$staffId'] }, 
+                  { $eq: ['$occurrence_id', '$$occurrenceId'] }
                 ]
               }
             }
