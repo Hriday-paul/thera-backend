@@ -125,8 +125,8 @@ const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
     reminderTypes: {
       type: [reminderSchema], default: [{
         msg_type: "Email",
-        long_ago: 1,
-        time_type: "Hours"
+        long_ago: 30,
+        time_type: "Minutes"
       }]
     },
 

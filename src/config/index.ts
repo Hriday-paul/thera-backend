@@ -8,21 +8,31 @@ const stripe = {
 };
 
 const message = {
-  twilioAccountSID : process.env.TWILIO_ACCOUNT_SID,
-  twilioAuthToken : process.env.TWILIO_AUTH_TOKEN,
-  twilioPhoneNumber : process.env.TWILIO_PHONE_NUMBER,
+  twilioAccountSID: process.env.TWILIO_ACCOUNT_SID,
+  twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
+  twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER,
+}
+
+const meet = {
+  client_id: process.env.MEET_CLIENT,
+  secret_id: process.env.MEET_SECRET,
+  redirect_url: process.env.MEET_CALLBACK,
+  refresh_token: process.env.MEET_REFRESH_TOKEN,
 }
 
 export default {
   NODE_ENV: process.env.NODE_ENV,
   port: process.env.PORT,
   ip: process.env.IP,
-  SERVER_URL : process.env.SERVER_URL,
-  BASE_URL : process.env.BASE_URL,
+  SERVER_URL: process.env.SERVER_URL,
+  BASE_URL: process.env.BASE_URL,
 
   success_url: process.env.PAYMENT_SUCCESS_URL,
   cancel_url: process.env.PAYMENT_CANCEL_URL,
   database_url: process.env.DATABASE_URL,
+
+  staff_client_url : process.env.STAFF_CLIENT_URL,
+  patient_client_url : process.env.PATIENT_CLIENT_URL,
 
   client_Url: process.env.CLIENT_URL,
   bcrypt_salt_rounds: process.env.BCRYPT_SALT_ROUNDS,
@@ -36,5 +46,6 @@ export default {
   stripe_secret: process.env.STRIPE_API_SECRET,
   stripe_key: process.env.STRIPE_API_KEY,
   stripe,
-  message
+  message,
+  meet
 };

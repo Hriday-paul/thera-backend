@@ -126,4 +126,16 @@ router.get(
     appoinmentControler.appoinmentChartByPatient,
 );
 
+router.post(
+    '/company/export',
+    auth(USER_ROLE.company),
+    appoinmentControler.exportAppointments,
+);
+
+router.post(
+    '/staff/export',
+    auth(USER_ROLE.staf),
+    appoinmentControler.exportAppointmentsByStaff,
+);
+
 export const AppoinmentRouts = router;

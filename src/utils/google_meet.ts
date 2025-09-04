@@ -4,7 +4,8 @@ import moment from 'moment';
 
 export async function createRecurringGoogleEvent(
   auth: any,
-  appointment: IAppoinment
+  appointment: IAppoinment,
+  guestEmails: { email: string }[]
 ): Promise<string> {
   const calendar = google.calendar('v3');
 
@@ -48,6 +49,13 @@ export async function createRecurringGoogleEvent(
         .format(),
       timeZone,
     },
+    reminders: {
+      useDefault: false,
+      overrides: []
+    },
+    
+    attendees: guestEmails,
+
     recurrence: recurrenceRule ? [recurrenceRule] : undefined,
     conferenceData: {
       createRequest: {

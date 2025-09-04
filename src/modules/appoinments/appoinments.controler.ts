@@ -6,6 +6,8 @@ import httpStatus from "http-status"
 import AppError from "../../error/AppError";
 import { User } from "../user/user.models";
 import { Types } from "mongoose";
+import excelJs from "exceljs"
+import moment from "moment";
 
 const createAppointment = catchAsync(async (req: Request, res: Response) => {
 
@@ -20,6 +22,8 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
 })
 
 const updateAppointment = catchAsync(async (req: Request, res: Response) => {
+
+    console.log("update hited--------")
 
     const result = await appoinmentsService.updateAppointment(req.body?.appointment, req.body, req?.params?.id, req?.user?._id);
 
@@ -299,7 +303,127 @@ const appoinmentChartByPatient = catchAsync(async (req: Request, res: Response) 
         message: 'Appoinment chart data retrived successfully',
         data: result,
     });
-})
+});
+
+
+const exportAppointments = async (req: Request, res: Response) => {
+
+
+    const occurences = await appoinmentsService.allAppointments_byCompany_WithStaffStatus(req?.user?._id, req?.query);
+
+    const workbook = new excelJs.Workbook();
+    const workSheet = workbook.addWorksheet("Patients");
+
+    workSheet.columns = [
+        { header: "ID", key: "_id", width: 30 },
+        { header: "Title", key: "title", width: 20 },
+        { header: "Patient", key: "patient_name", width: 25 },
+        { header: "Appointment Type", key: "type", width: 20 },
+        { header: "Location", key: "address", width: 40 },
+        { header: "Start Date & time", key: "start_time", width: 25 },
+        { header: "End Date & time", key: "end_time", width: 25 },
+
+        { header: "status", key: "status", width: 15 },
+        { header: "Staffs", key: "staffs", width: 50 },
+    ];
+
+    for (let occurence of occurences) {
+        const row = {
+            _id: occurence?._id,
+            title: occurence?.appointment?.title,
+            patient_name: occurence?.patient?.name,
+            type: occurence?.appointment?.appoinment_type,
+            address: occurence?.location?.address,
+            status: occurence?.status,
+            start_time: moment(occurence?.start).format("DD/MM/YYYY h:mm a"),
+            end_time: moment(occurence?.end).format("DD/MM/YYYY h:mm a"),
+            staffs: occurence?.staff_ids?.map(i => {
+                return { name: i?.name, status: i?.status }
+            })
+        }
+
+        workSheet.addRow(row);
+    }
+
+    workSheet.getRow(1).eachCell((cell) => {
+        cell.font = { bold: true };
+    });
+
+    res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    res.setHeader("Content-Disposition", `attachement; filename=appointments.xlsx`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+};
+
+const exportAppointmentsByStaff = async (req: Request, res: Response) => {
+
+    const staff = await User.findById(req?.user?._id)
+
+    if (!staff) {
+        throw new AppError(httpStatus.NOT_FOUND, "Staff not found")
+    }
+    if (!staff?.staf_company_id) {
+        throw new AppError(httpStatus.NOT_FOUND, "Staff not found")
+    }
+
+
+    const occurences = await appoinmentsService.allAppointments_byStaff_WithStaffStatus(req?.user?._id, req?.query);
+
+    const workbook = new excelJs.Workbook();
+    const workSheet = workbook.addWorksheet("Patients");
+
+    workSheet.columns = [
+        { header: "ID", key: "_id", width: 30 },
+        { header: "Title", key: "title", width: 20 },
+        { header: "Patient", key: "patient_name", width: 25 },
+        { header: "Appointment Type", key: "type", width: 20 },
+        { header: "Location", key: "address", width: 40 },
+        { header: "Start Date & time", key: "start_time", width: 25 },
+        { header: "End Date & time", key: "end_time", width: 25 },
+
+        { header: "status", key: "status", width: 15 },
+        { header: "Staffs", key: "staffs", width: 50 },
+    ];
+
+    for (let occurence of occurences) {
+        const row = {
+            _id: occurence?._id,
+            title: occurence?.appointment?.title,
+            patient_name: occurence?.patient?.name,
+            type: occurence?.appointment?.appoinment_type,
+            address: occurence?.location?.address,
+            status: occurence?.status,
+            start_time: moment(occurence?.start).format("DD/MM/YYYY h:mm a"),
+            end_time: moment(occurence?.end).format("DD/MM/YYYY h:mm a"),
+            staffs: occurence?.staff_ids?.map(i => {
+                return { name: i?.name, status: i?.status }
+            })
+        }
+
+        workSheet.addRow(row);
+    }
+
+    workSheet.getRow(1).eachCell((cell) => {
+        cell.font = { bold: true };
+    });
+
+    res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    res.setHeader("Content-Disposition", `attachement; filename=appointments.xlsx`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+};
 
 export const appoinmentControler = {
     createAppointment,
@@ -322,5 +446,8 @@ export const appoinmentControler = {
     getMonthlyAppointmentStats_by_patient,
     appoinmentChart,
     appoinmentChartByStaff,
-    appoinmentChartByPatient
+    appoinmentChartByPatient,
+
+    exportAppointments,
+    exportAppointmentsByStaff
 }

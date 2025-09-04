@@ -163,11 +163,8 @@ const initializeSocketIO = (server: HttpServer) => {
         try {
           const { searchTerm } = data;
 
-          console.log(searchTerm)
-
           const chatList = await chatService.getMyChatList(user?._id, searchTerm);
 
-          console.log(chatList.length)
           const myChat = 'chat-list::' + user?._id;
 
           io.emit(myChat, chatList);

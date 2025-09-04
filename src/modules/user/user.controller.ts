@@ -8,6 +8,9 @@ import config from "../../config";
 import { User } from "./user.models";
 import { Types } from "mongoose";
 import AppError from "../../error/AppError";
+import path from "path";
+import { sendEmail } from "../../utils/mailSender";
+import fs from 'fs';
 
 //get all users
 const all_users = catchAsync(async (req: Request, res: Response) => {
@@ -78,19 +81,32 @@ const add_new_staff = catchAsync(async (req: Request<{}, {}, IIStaf>, res: Respo
 
     image = req.file?.filename && (config.BASE_URL + '/images/' + req.file.filename);
 
-    const result = await userService.add_new_staff(req.body, image || "", req?.user?._id);
+    const user = await userService.add_new_staff(req.body, image || "", req?.user?._id);
 
-    // let otptoken;
+    const otpEmailPath = path.join(
+        __dirname,
+        // '../../public/view/otp_mail.html',
+        '../../public/view/new_account.html',
+    );
 
-    // if (!result?.isverified) {
-    //     otptoken = await otpServices.resendOtp(result?.email);
-    // }
+    if (user) {
+        sendEmail(
+            user?.email,
+            'New account created',
+            fs
+                .readFileSync(otpEmailPath, 'utf8')
+                .replace('{{email}}', user?.email)
+                .replace('{{role}}', user?.role)
+                .replace('{{password}}', req.body?.password)
+                .replace('{{link}}', config.staff_client_url + "/auth/login")
+        );
+    }
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: 'New Staff created successfully',
-        data: { user: result },
+        data: { user },
     });
 })
 
@@ -143,7 +159,7 @@ const add_new_Patient = catchAsync(async (req: Request<{}, {}, IIPatient>, res: 
 
     image = req.file?.filename && (config.BASE_URL + '/images/' + req.file.filename);
 
-    const result = await userService.add_new_Patient(req.body, image || "", req?.user?._id);
+    const user = await userService.add_new_Patient(req.body, image || "", req?.user?._id);
 
     // let otptoken;
 
@@ -151,11 +167,30 @@ const add_new_Patient = catchAsync(async (req: Request<{}, {}, IIPatient>, res: 
     //     otptoken = await otpServices.resendOtp(result?.email);
     // }
 
+    const otpEmailPath = path.join(
+        __dirname,
+        // '../../public/view/otp_mail.html',
+        '../../public/view/new_account.html',
+    );
+
+    if (user) {
+        sendEmail(
+            user?.email,
+            'New account created',
+            fs
+                .readFileSync(otpEmailPath, 'utf8')
+                .replace('{{email}}', user?.email)
+                .replace('{{role}}', user?.role)
+                .replace('{{password}}', req.body?.password)
+                .replace('{{link}}', config.patient_client_url + "/auth/login")
+        );
+    }
+
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: 'New Patient created successfully',
-        data: { user: result },
+        data: { user },
     });
 })
 

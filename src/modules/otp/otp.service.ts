@@ -15,7 +15,7 @@ const verifyOtp = async (token: string, otp: string | number) => {
     throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized');
   }
   let decode;
- 
+
   try {
     decode = jwt.verify(
       token,
@@ -50,7 +50,7 @@ const verifyOtp = async (token: string, otp: string | number) => {
     throw new AppError(httpStatus.BAD_REQUEST, 'OTP did not match');
   }
 
-  const  updateUser = await User.findByIdAndUpdate(
+  const updateUser = await User.findByIdAndUpdate(
     user?._id,
     {
       $set: {
@@ -89,18 +89,18 @@ const resendOtp = async (email: string) => {
   const expiresAt = moment().add(3, 'minute');
 
   const updateOtp = await User.findByIdAndUpdate(
-      user?._id,
-      {
-        $set: {
-          verification: {
-            otp,
-            expiresAt,
-            status: false,
-          },
+    user?._id,
+    {
+      $set: {
+        verification: {
+          otp,
+          expiresAt,
+          status: false,
         },
       },
-      { new: true },
-    );
+    },
+    { new: true },
+  );
 
   if (!updateOtp) {
     throw new AppError(
@@ -138,7 +138,69 @@ const resendOtp = async (email: string) => {
   return { token };
 };
 
+const StaffResetPassowrd = async (id: string) => {
+  const user = await User.findOne({ _id : id, role : "staf" })
+
+  if (!user) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'User not found');
+  }
+
+  const otp = generateOtp();
+  const expiresAt = moment().add(5, 'minute');
+
+  const updateOtp = await User.findByIdAndUpdate(
+    user?._id,
+    {
+      $set: {
+        verification: {
+          otp,
+          expiresAt,
+          status: true,
+        },
+      },
+    },
+    { new: true },
+  );
+
+  if (!updateOtp) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Failed to send reset passowrd. Please try again later',
+    );
+  }
+
+  const jwtPayload = {
+    email: user?.email,
+    userId: user?._id,
+    role: user?.role
+  };
+  const token = jwt.sign(jwtPayload, config.jwt_access_secret as Secret, {
+    expiresIn: '30m',
+  });
+
+  const otpEmailPath = path.join(
+    __dirname,
+    // '../../public/view/otp_mail.html',
+    '../../public/view/staff_reset_pass.html',
+  );
+
+  if (user) {
+    await sendEmail(
+      user?.email,
+      'Reset Password',
+      fs
+        .readFileSync(otpEmailPath, 'utf8')
+        .replace('{{link}}', config.staff_client_url + "/auth/reset-password?token=" + token)
+        .replace('{{name}}', user?.name),
+    );
+  }
+
+  return null;
+};
+
+
 export const otpServices = {
   verifyOtp,
   resendOtp,
+  StaffResetPassowrd
 };

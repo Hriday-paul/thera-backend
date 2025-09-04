@@ -6,6 +6,7 @@ import httpStatus from "http-status"
 import config from "../../../config";
 import excelJs from "exceljs"
 import { IUser } from "../user.interface";
+import { otpServices } from "../../otp/otp.service";
 
 //staffList
 const staffList = catchAsync(async (req: Request, res: Response) => {
@@ -34,6 +35,16 @@ const staffprofile = catchAsync(async (req: Request, res: Response) => {
         statusCode: httpStatus.OK,
         success: true,
         message: 'Staff profile retrived successfully',
+        data: result,
+    });
+});
+
+const StaffResetPassowrd = catchAsync(async (req: Request, res: Response) => {
+    const result = await otpServices.StaffResetPassowrd(req?.body?.staff);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Staff Reset Password send successfully',
         data: result,
     });
 });
@@ -85,7 +96,7 @@ const exportstaffs = catchAsync(async (req: Request, res: Response) => {
         { header: "First Name", key: "f_name" },
         { header: "Middle Name", key: "middle_name" },
         { header: "Last Name", key: "last_name" },
-        { header: "Email", key: "Email" },
+        { header: "Email", key: "email" },
         { header: "Image", key: "image" },
         { header: "status", key: "status" },
         { header: "Preferred Name", key: "preferred_name" },
@@ -125,7 +136,6 @@ const exportstaffs = catchAsync(async (req: Request, res: Response) => {
         { header: "Off Days", key: "offDays" },
     ];
 
-
     for (let user of staffs?.data) {
         const row = { ...user, ...user?.staf }
         workSheet.addRow(row);
@@ -153,5 +163,6 @@ export const StaffsController = {
     updateStaff,
     myProfile,
     updateMyStaffProfile,
-    exportstaffs
+    exportstaffs,
+    StaffResetPassowrd
 }

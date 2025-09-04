@@ -325,7 +325,7 @@ const exportPatients = catchAsync(async (req: Request, res: Response) => {
         { header: "Middle Name", key: "middle_name" },
         { header: "Last Name", key: "last_name" },
         { header: "Preferred Name", key: "preferred_name" },
-        { header: "Email", key: "Email" },
+        { header: "Email", key: "email" },
         { header: "Image", key: "image" },
         { header: "status", key: "status" },
         { header: "Gender", key: "gender" },

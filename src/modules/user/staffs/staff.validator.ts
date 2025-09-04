@@ -1,4 +1,4 @@
-import { query } from "express-validator";
+import { check, query } from "express-validator";
 
 export const getfreestaffValidator = [
     query("date")
@@ -12,4 +12,12 @@ export const getfreestaffValidator = [
         .withMessage("time is required")
         .isISO8601()
         .withMessage("time must be a valid time")
+];
+
+export const staffResetPassValidator = [
+    check("staff")
+        .notEmpty()
+        .withMessage("staff id is required")
+        .isMongoId()
+        .withMessage("staff id invalid"),
 ];

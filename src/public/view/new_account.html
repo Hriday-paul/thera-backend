@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Email Template</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .button {
+            background: #007cba;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Welcome!</h1>
+        <p>Your {{role}} account has been created successfully to Thera Software.</p>
+
+        <p><strong>Email:</strong> {{email}}</p>
+        <p><strong>Password:</strong> {{password}}</p>
+
+        <p>Verify your account before login.</p>
+
+        <p><a href="{{link}}" class="button">Login Now</a></p>
+
+        <p style="color: white;">Please change your password after logging in.</p>
+
+        <p>Thanks,<br>Thera Team</p>
+    </div>
+</body>
+
+</html>

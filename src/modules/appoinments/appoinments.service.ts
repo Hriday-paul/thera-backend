@@ -26,6 +26,7 @@ interface IIApoinment extends IAppoinment {
 }
 
 interface IIOccurrencce {
+  _id: ObjectId
   appointment: IAppoinment,
   start_datetime: Date,
   end_datetime: Date,
@@ -203,7 +204,7 @@ agenda.define("send appointment reminder", async (job: any) => {
 });
 
 
-const generateOccurrences = async (appointment: IIApoinment, companyId: ObjectId): Promise<IOccurrencce[]> => {
+const generateOccurrences = async (appointment: IIApoinment, companyId: ObjectId, guestEmails: { email: string }[]): Promise<IOccurrencce[]> => {
 
   const {
     _id: appointmentId,
@@ -235,12 +236,6 @@ const generateOccurrences = async (appointment: IIApoinment, companyId: ObjectId
     .millisecond(0);
 
 
-  // const oAuth2Client = new google.auth.OAuth2(
-  //   "CLIENT_ID ",
-  //   "CLIENT_SECRET",
-  //   "REDIRECT_URI"
-  // );
-
   // const scopes = ['https://www.googleapis.com/auth/calendar.events'];
 
   // const url = oAuth2Client.generateAuthUrl({
@@ -248,12 +243,31 @@ const generateOccurrences = async (appointment: IIApoinment, companyId: ObjectId
   //   scope: scopes,
   // });
 
-  // const { tokens } = await oAuth2Client.getToken(url);
-  // oAuth2Client.setCredentials(tokens);
+  // console.log(url)
 
-  // let meetLink = location?.isOnline
-  //   ? await createRecurringGoogleEvent(oAuth2Client, appointment)
-  //   : "";
+  // const { tokens } = await oAuth2Client.getToken("refresh token");
+
+
+
+  let meetLink = "";
+
+  if (location?.isOnline) {
+
+    const oAuth2Client = new google.auth.OAuth2(
+      config.meet.client_id,
+      config.meet.secret_id,
+      config.meet.redirect_url,
+    );
+
+    oAuth2Client.setCredentials({
+      refresh_token: config.meet.refresh_token,
+    });
+
+    meetLink = await createRecurringGoogleEvent(oAuth2Client, appointment, guestEmails)
+
+  }
+
+  // console.log(meetLink, "-----------------meetlink-----------------")
 
 
   const occurrences: IOccurrencce[] = [];
@@ -293,8 +307,8 @@ const generateOccurrences = async (appointment: IIApoinment, companyId: ObjectId
       start_datetime: occurrenceStart.toDate(),
       end_datetime: occurrenceEnd.toDate(),
       staff_ids,
-      // location: { isOnline: location?.isOnline, address: location?.isOnline ? meetLink : location?.address },
-      location: location,
+      location: { isOnline: location?.isOnline, address: location?.isOnline ? meetLink : location?.address },
+      // location: location,
       status: "upcoming",
       patient_id,
       company_id: companyId
@@ -317,6 +331,8 @@ function getOffsetInMinutes(reminder: IReminder): number {
 
 const createAppointment = async (companyId: string, payload: IIApoinment) => {
 
+  const guestEmails: { email: string }[] = [];
+
   const company = await User.findOne({ _id: new Types.ObjectId(companyId) }).populate({ path: "company" })
 
   if (!company) {
@@ -327,15 +343,25 @@ const createAppointment = async (companyId: string, payload: IIApoinment) => {
     throw new AppError(httpStatus.NOT_FOUND, "Comapny not found")
   }
 
+  guestEmails.push({ email: company?.email });
+
   const reminderSchedules = company?.company?.reminderTypes
 
   //--------------creae root appointment-------------
   const appoin = await Appointment.create({ ...payload, company_id: companyId });
 
+  const staffs = await User.find({
+    _id: { $in: payload.staff_ids }
+  });
+
+  for (let staff of staffs) {
+    guestEmails.push({ email: staff?.email })
+  }
+
   const appointment = appoin.toObject();
 
   // -----------------generate occurences----------------
-  const occurrences = await generateOccurrences({ ...appointment, location: payload?.location }, companyId as unknown as ObjectId);
+  const occurrences = await generateOccurrences({ ...appointment, location: payload?.location }, companyId as unknown as ObjectId, guestEmails);
 
   const occurrenceList = await AppointmentOccurrence.insertMany(occurrences);
 
@@ -359,6 +385,28 @@ const createAppointment = async (companyId: string, payload: IIApoinment) => {
 
   return occurrenceList;
 };
+
+const reScheduleAgenda = async (occcurence: IIOccurrencce, new_date: Date) => {
+  await agenda.cancel({ "data.occurenceId": occcurence?._id });
+
+  for (let reminder of occcurence?.company_id?.company?.reminderTypes || []) {
+    const offsetMinutes = getOffsetInMinutes(reminder);
+
+    console.log(reminder.msg_type)
+
+    const reminderTime = new Date(new_date.getTime() - offsetMinutes * 60 * 1000);
+
+    if (reminderTime > new Date()) {
+      agenda.schedule(reminderTime, "send appointment reminder", {
+        appointmentId: occcurence?.appointment?._id,
+        occurenceId: occcurence?._id,
+        companyId: occcurence?.company_id?._id,
+        type: reminder.msg_type,
+        offset: offsetMinutes
+      })
+    }
+  }
+}
 
 
 const updateStatusOccurence = async (occurrenceId: string, status: string, userId: string) => {
@@ -479,6 +527,7 @@ const updateStatusOccurence = async (occurrenceId: string, status: string, userI
     }
 
   }
+
 
   return res;
 };
@@ -760,6 +809,22 @@ const getFreeStaff = async (req_date: string, time: string, companyId: string) =
   return finalFreeStaff;
 };
 
+
+
+export interface ITOccurence {
+  start: Date,
+  end: Date,
+  _id: string,
+  appointment: IAppoinment,
+  location: {
+    isOnline: boolean,
+    address: string
+  },
+  "status": "upcoming" | "completed" | "cancelled",
+  staff_ids: IUser[],
+  patient: IUser
+}
+
 const allAppointments_byCompany_WithStaffStatus = async (companyId: string, query: Record<string, any>) => {
 
   const status = query?.status;
@@ -822,7 +887,7 @@ const allAppointments_byCompany_WithStaffStatus = async (companyId: string, quer
             $match: {
               $expr: {
                 $and: [
-                  { $eq: ['$staff_id', '$$staffId'] }, 
+                  { $eq: ['$staff_id', '$$staffId'] },
                   { $eq: ['$occurrence_id', '$$occurrenceId'] }
                 ]
               }
@@ -865,9 +930,9 @@ const allAppointments_byCompany_WithStaffStatus = async (companyId: string, quer
 
     },
     {
-      $sort: { start: 1 }
+      $sort: { start: -1 }
     }
-  ]);
+  ]) as unknown as ITOccurence[];
 
   return result;
 };
@@ -982,9 +1047,9 @@ const allAppointments_byStaff_WithStaffStatus = async (staffId: string, query: R
 
     },
     {
-      $sort: { start: 1 }
+      $sort: { start: -1 }
     }
-  ]);
+  ]) as unknown as ITOccurence[];
 
   return result;
 };
@@ -1098,7 +1163,7 @@ const allAppointments_byPatient_WithStaffStatus = async (patientId: string, quer
 
     },
     {
-      $sort: { start: 1 }
+      $sort: { start: -1 }
     }
   ]);
 
@@ -1225,7 +1290,7 @@ const updateAppointment = async (id: string, payload: IIApoinment, occurenceId: 
     );
   }
 
-  const Occurrences = await AppointmentOccurrence.updateOne({ _id: occurenceId }, { staff_ids, start_datetime: start_time, end_datetime: end_time, location });
+  const updatedOccurrences = await AppointmentOccurrence.findOneAndUpdate({ _id: occurenceId }, { staff_ids, start_datetime: start_time, end_datetime: end_time, location }, { new: true });
 
   const exist = await AppointmentOccurrence.findOne({ _id: occurenceId }).populate({
     path: "patient_id",
@@ -1329,6 +1394,11 @@ const updateAppointment = async (id: string, payload: IIApoinment, occurenceId: 
       }
     }
   }
+
+  if (!updatedOccurrences) return;
+
+  // reschedule agenda
+  reScheduleAgenda(exist, updatedOccurrences?.start_datetime)
 
 
   return appointment;

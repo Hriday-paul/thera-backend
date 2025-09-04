@@ -8,7 +8,7 @@ import req_validator from "../../../middleware/req_validation";
 import { image_Upload } from "../../../utils/FileUpload";
 import { StaffsController } from "./staff.controller";
 import { appoinmentControler } from "../../appoinments/appoinments.controler";
-import { getfreestaffValidator } from "./staff.validator";
+import { getfreestaffValidator, staffResetPassValidator } from "./staff.validator";
 
 const router = Router();
 
@@ -84,7 +84,6 @@ router.put(
     StaffsController.updateStaff,
 );
 
-
 router.get(
     '/:id',
     auth(USER_ROLE.company, USER_ROLE.staf),
@@ -95,6 +94,14 @@ router.post(
     '/export',
     auth(USER_ROLE.company),
     StaffsController.exportstaffs,
+);
+
+router.post(
+    '/reset-password',
+    staffResetPassValidator,
+    req_validator(),
+    auth(USER_ROLE.company),
+    StaffsController.StaffResetPassowrd,
 );
 
 export const StaffRouts = router;
