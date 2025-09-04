@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npx tsc",
     "postbuild": "mkdir -p dist/public/view && cp -r src/public/view/* dist/public/view/",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "dev": "nodemon src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
