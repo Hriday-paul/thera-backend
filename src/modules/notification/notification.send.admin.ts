@@ -21,8 +21,8 @@ export const sendAdminNotifications = async (
   }).select("fcmToken email _id");
 
   if (admin?.fcmToken) {
-    sendNotification([admin.fcmToken], {
-      sender: payload.sender,
+    sendNotification([admin.fcmToken], [{
+      sender: payload.sender as any,
       receiver: admin?._id as any,
       receiverEmail: admin?.email,
       receiverRole: "admin",
@@ -30,6 +30,6 @@ export const sendAdminNotifications = async (
       message: payload.message,
       type: payload.type as any,
       link: payload.link,
-    });
+    }], {title : payload.title, message : payload.message});
   }
 };
