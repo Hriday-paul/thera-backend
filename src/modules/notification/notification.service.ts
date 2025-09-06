@@ -65,9 +65,6 @@ const makeReadAll = async (user: string) => {
   const result = await Notification.updateMany(
     { receiver: user },
     { isRead: true },
-    {
-      new: true,
-    }
   );
   return result;
 };
