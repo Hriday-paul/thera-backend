@@ -3,7 +3,7 @@ import config from '../../config';
 import { IUser } from '../user/user.interface';
 
 const stripe = new Stripe(config.stripe?.stripe_api_secret as string, {
-  apiVersion: "2025-03-31.basil",
+  apiVersion: "2025-08-27.basil",
   typescript: true,
 });
 
