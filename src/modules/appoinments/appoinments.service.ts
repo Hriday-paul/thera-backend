@@ -9,14 +9,14 @@ import httpStatus from "http-status";
 import mongoose, { ObjectId, Types } from "mongoose";
 import { sendNotification } from "../notification/notification.utils";
 import { INotification } from "../notification/notification.inerface";
-import { google } from 'googleapis';
 import fs from 'fs';
-import { createRecurringGoogleEvent } from "../../utils/google_meet";
 import config from "../../config";
 import { sendEmail } from "../../utils/mailSender";
 import { sendSMSMessage } from "../../utils/SmsSender";
 import agenda from "../../config/agenda";
 import path from "path";
+import base64 from "base-64"
+import { createZoomMeeting } from "../../utils/google_meet";
 
 interface IIApoinment extends IAppoinment {
   location: {
@@ -203,8 +203,46 @@ agenda.define("send appointment reminder", async (job: any) => {
 
 });
 
+let zoomToken: { access_token: string, expires_at: number } | null = null;
 
-const generateOccurrences = async (appointment: IIApoinment, companyId: ObjectId, guestEmails: { email: string }[]): Promise<IOccurrencce[]> => {
+const generateZoomAccessToken = async () => {
+  try {
+
+    const now = Date.now();
+
+    if (zoomToken && zoomToken.expires_at > now) {
+      return zoomToken.access_token; // reuse until expiry
+    }
+
+    const credentials = base64.encode(`${config.zoom.client_id}:${config.zoom.secret_id}`);
+
+    const response = await fetch(
+      `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${config.zoom.account_id}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${credentials}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    zoomToken = {
+      access_token: data.access_token,
+      expires_at: now + (data.expires_in * 1000) - 5000, // subtract 5s buffer
+    };
+
+    return zoomToken.access_token;
+  }
+  catch (err) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Access token request failed, try again")
+  }
+};
+
+
+const generateOccurrences = async (appointment: IIApoinment, companyId: ObjectId, guestEmails: string[]): Promise<IOccurrencce[]> => {
 
   const {
     _id: appointmentId,
@@ -236,34 +274,20 @@ const generateOccurrences = async (appointment: IIApoinment, companyId: ObjectId
     .millisecond(0);
 
 
-  // const scopes = ['https://www.googleapis.com/auth/calendar.events'];
-
-  // const url = oAuth2Client.generateAuthUrl({
-  //   access_type: 'offline', // so you get a refresh token
-  //   scope: scopes,
-  // });
-
-  // console.log(url)
-
-  // const { tokens } = await oAuth2Client.getToken("refresh token");
-
 
 
   let meetLink = "";
 
   if (location?.isOnline) {
 
-    const oAuth2Client = new google.auth.OAuth2(
-      config.meet.client_id,
-      config.meet.secret_id,
-      config.meet.redirect_url,
-    );
 
-    oAuth2Client.setCredentials({
-      refresh_token: config.meet.refresh_token,
-    });
+    const accessToken = await generateZoomAccessToken();
 
-    meetLink = await createRecurringGoogleEvent(oAuth2Client, appointment, guestEmails)
+    meetLink = await createZoomMeeting(accessToken, appointment, guestEmails)
+
+    console.log(meetLink);
+
+    // meetLink = await createRecurringGoogleEvent(oAuth2Client, appointment, guestEmails)
 
   }
 
@@ -331,7 +355,7 @@ function getOffsetInMinutes(reminder: IReminder): number {
 
 const createAppointment = async (companyId: string, payload: IIApoinment) => {
 
-  const guestEmails: { email: string }[] = [];
+  const guestEmails: string[] = [];
 
   const company = await User.findOne({ _id: new Types.ObjectId(companyId) }).populate({ path: "company" })
 
@@ -343,7 +367,7 @@ const createAppointment = async (companyId: string, payload: IIApoinment) => {
     throw new AppError(httpStatus.NOT_FOUND, "Comapny not found")
   }
 
-  guestEmails.push({ email: company?.email });
+  // guestEmails.push(company?.email);
 
   const reminderSchedules = company?.company?.reminderTypes
 
@@ -355,7 +379,7 @@ const createAppointment = async (companyId: string, payload: IIApoinment) => {
   });
 
   for (let staff of staffs) {
-    guestEmails.push({ email: staff?.email })
+    guestEmails.push(staff?.email)
   }
 
   const appointment = appoin.toObject();

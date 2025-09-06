@@ -21,6 +21,7 @@
     "@aws-sdk/client-s3": "^3.857.0",
     "@types/stripe": "^8.0.416",
     "agenda": "^5.0.0",
+    "base-64": "^1.0.0",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -47,6 +48,7 @@
     "twilio": "^5.9.0"
   },
   "devDependencies": {
+    "@types/base-64": "^1.0.2",
     "@types/bcrypt": "^5.0.2",
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",

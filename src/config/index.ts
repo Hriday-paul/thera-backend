@@ -20,6 +20,12 @@ const meet = {
   refresh_token: process.env.MEET_REFRESH_TOKEN,
 }
 
+const zoom = {
+  client_id: process.env.ZOOM_CLIENT_ID,
+  secret_id: process.env.ZOOM_CLIENT_SECRET,
+  account_id: process.env.ZOOM_ACCOUNT_ID,
+}
+
 export default {
   NODE_ENV: process.env.NODE_ENV,
   port: process.env.PORT,
@@ -47,5 +53,6 @@ export default {
   stripe_key: process.env.STRIPE_API_KEY,
   stripe,
   message,
-  meet
+  meet,
+  zoom
 };

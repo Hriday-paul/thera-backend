@@ -31,9 +31,9 @@ const billingSchema = new Schema({
   phone: { type: String },
 })
 const reminderSchema = new Schema<IReminder>({
-  msg_type: { type: String, required: true, enum: ["Hours", "Minutes", "Days"] },
+  msg_type: { type: String, required: true, enum: ["Email", "SMS"] },
   long_ago: { type: Number, required: true },
-  time_type: { type: String, required: true, enum: ["Email", "SMS"] },
+  time_type: { type: String, required: true, enum: ["Hours", "Minutes", "Days"] },
 })
 const MsgTemplateSchema = new Schema<IMsgTemplate>({
   sms: {
