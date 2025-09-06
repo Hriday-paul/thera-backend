@@ -130,7 +130,18 @@ const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
       }]
     },
 
-    msg_templates: { type: MsgTemplateSchema },
+    msg_templates: {
+      type: MsgTemplateSchema, default: {
+        sms: {
+          isActive: false,
+          message: "Your appointment reminder for {{organisation Name}}. Reply with 1 to confirm or 2 cancel. Call\nYou have an appointment with us scheduled for {{orgCallbackNumber}} to reschedule."
+        },
+        email: {
+          isActive: true,
+          message: "Your appointment reminder for {{organisation Name}}. Reply with 1 to confirm or 2 cancel. Call\nYou have an appointment with us scheduled for {{orgCallbackNumber}} to reschedule.",
+        },
+      }
+    },
     patient_tags: { type: [patienttagSchema] }
 
   }
