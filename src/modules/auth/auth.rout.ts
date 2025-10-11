@@ -8,20 +8,36 @@ import auth from "../../middleware/auth";
 import { USER_ROLE } from "../user/user.constants";
 
 const router = Router();
+import { rateLimit } from 'express-rate-limit';
 
 router.post('/create',
+    rateLimit({
+        windowMs: 1 * 60 * 1000, // 1 minutes
+        max: 2, // 5 requests per IP
+        message: 'Too many request has been made. please try again after a minute',
+    }),
     createAccountValidator,
     req_validator(),
     authController.createUser
 )
 
 router.post('/login',
+    rateLimit({
+        windowMs: 1 * 60 * 1000, // 1 minutes
+        max: 5, // 5 requests per IP
+        message: 'Too many request has been made. please try again after a minute',
+    }),
     loginAccountValidator,
     req_validator(),
     authController.loginUser
 )
 
 router.post('/admin/login',
+    rateLimit({
+        windowMs: 1 * 60 * 1000, // 1 minutes
+        max: 5, // 5 requests per IP
+        message: 'Too many request has been made. please try again after a minute',
+    }),
     loginAccountValidator,
     req_validator(),
     authController.adminLogin
@@ -50,6 +66,11 @@ router.post(
 
 router.post(
     '/resend-otp',
+    rateLimit({
+        windowMs: 2 * 60 * 1000, // 2 minutes
+        max: 1, // 5 requests per IP
+        message: 'Too many request has been made. please try again after 2 minute',
+    }),
     otpResendValidator,
     req_validator(),
     otpControllers.resendOtp,
