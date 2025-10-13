@@ -9,7 +9,8 @@ const OrgLocationSchema = new Schema<IOrgLocation>({
   email: { type: String },
   fax: { type: String },
   phone: { type: String },
-  rooms: [{ type: String }]
+  rooms: [{ type: String }],
+
 });
 
 export const SeviceSchema = new Schema<IService>({
@@ -117,11 +118,42 @@ const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
     services: { type: [SeviceSchema] },
 
     currency: { type: String },
-    default_billing_place: { type: String },
+    default_billing_place: { type: OrgLocationSchema },
 
     appointment_kept: { type: Boolean, default: false },
 
-    automations: AutomationsSchema,
+    automations: {
+      type: AutomationsSchema, default: {
+        claim_service: true,
+
+        eligibility: {
+          new_patient_Check: true,
+          batchCheck: true,
+          primary_secondary_bill: true,
+        },
+
+        others: {
+          invoice_creaton: true,
+          invoice_process: true,
+          claim_submission: true,
+          era_process: false,
+          urchive_unmatch_era_claim: false,
+        },
+
+        chat: {
+          staff: {
+            allow_see_patient_list: true,
+            allow_chat_by_all_patients: true,
+            allow_chat_with_staff: true,
+          },
+          patient: {
+            allow_see_staffs: true,
+            allow_chat_with_staff: true,
+          },
+        },
+      }
+    },
+
     reminderTypes: {
       type: [reminderSchema], default: [{
         msg_type: "Email",
@@ -134,11 +166,11 @@ const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
       type: MsgTemplateSchema, default: {
         sms: {
           isActive: false,
-          message: "Your appointment reminder for {{organisation Name}}. Reply with 1 to confirm or 2 cancel. Call\nYou have an appointment with us scheduled for {{orgCallbackNumber}} to reschedule."
+          message: "Your appointment reminder for {{OrganisationName}}. You have an appointment with us scheduled for {{Date}} {{Time}}. We hope you will attend this appointment. Contact us, {{OrgCallbackNumber}} for rechedule."
         },
         email: {
           isActive: true,
-          message: "Your appointment reminder for {{organisation Name}}. Reply with 1 to confirm or 2 cancel. Call\nYou have an appointment with us scheduled for {{orgCallbackNumber}} to reschedule.",
+          message: "Your appointment reminder for {{OrganisationName}}. You have an appointment with us scheduled for {{Date}} {{Time}}. We hope you will attend this appointment. Contact us, {{OrgCallbackNumber}} for rechedule.",
         },
       }
     },

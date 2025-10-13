@@ -35,7 +35,7 @@ export interface IOrgLocation {
   email: string,
   phone: string,
   fax: string,
-  rooms: string[]
+  rooms: string[],
 }
 
 export interface IService {
@@ -135,7 +135,7 @@ export interface ICompany {
 
   currency: string,
 
-  default_billing_place: string,
+  default_billing_place: IOrgLocation,
 
   billingDetails: {
     state: string,
