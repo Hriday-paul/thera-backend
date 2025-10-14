@@ -41,7 +41,6 @@ const appointmentOccurrenceSchema = new mongoose.Schema<IOccurrencce>({
 }, { timestamps: true });
 
 
-
 const staffUnavailabilitySchema = new mongoose.Schema<IStaffUnavilibility>({
     staff_id: { type: mongoose.Schema.Types.ObjectId, ref: "users", required : true },
     occurrence_id: { type: mongoose.Schema.Types.ObjectId, ref: "AppointmentOccurrences", required : true },

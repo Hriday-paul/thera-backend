@@ -154,9 +154,11 @@ export interface ICompany {
   reminderTypes: IReminder[],
   msg_templates: IMsgTemplate,
 
-  patient_tags: Ipatienttag[]
-}
+  patient_tags: Ipatienttag[],
 
+  use_appointment_location: boolean;
+  auto_set_telehealth_place: boolean;
+}
 
 
 export interface IStaf {

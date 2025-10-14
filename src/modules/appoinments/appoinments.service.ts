@@ -152,6 +152,7 @@ const ReminderFunc = async ({ occurenceId, msgType, userId }: { occurenceId: str
 
   // ---------send reminder to patient email----------
   if (occurence?.company_id?.company?.msg_templates?.email?.isActive && patient?.patient?.contactPreferences?.allowEmail && (!msgType || msgType == "Email")) {
+
     sendEmail(
       patient?.email,
       'Appoinment Reminder',
@@ -162,13 +163,27 @@ const ReminderFunc = async ({ occurenceId, msgType, userId }: { occurenceId: str
   // ---------send reminder to staffs email----------
   if (occurence?.company_id?.company?.msg_templates?.email?.isActive && (!msgType || msgType == "Email")) {
 
+    const staff_email_path = path.join(
+      process.cwd(),
+      "public",
+      "view",
+      "staff_reminder-tem.html"
+    );
+
     for (let staff of staffs) {
+
+      const temp = fs
+        .readFileSync(staff_email_path, 'utf8')
+        .replace('{{name}}', staff?.name)
+        .replace('{{date}}', appointmentdate)
+        .replace('{{time}}', appointmentTime)
+        .replace('{{location}}', address)
 
       if (staff?.email) {
         sendEmail(
           staff?.email,
           'Appoinment Reminder',
-          realEmailTemplate
+          temp
         );
       }
 
@@ -567,157 +582,6 @@ const markStaffUnavailable = async (staff_id: string, payload: IStaffUnavilibili
   }
   return await StaffUnavailability.create({ ...payload, staff_id });
 };
-
-
-// const getFreeStaff = async (req_date: string, time: string, companyId: string) => {
-
-//   const date = new Date(req_date);
-//   const timeDate = new Date(time);
-
-//   // console.log(date, time)
-
-//   const weekday = date.toLocaleString('en-US', { weekday: 'long' });
-
-//   interface ISStaff extends IUser {
-//     staf: IStaf
-//   }
-
-//   // Step 1: Get all staff who are scheduled to work on that day
-
-//   const availableUsers = await User.aggregate([
-//     {
-//       $match: {
-//         role: "staf",
-//         staf_company_id: new Types.ObjectId(companyId)
-//       }
-//     },
-//     {
-//       $lookup: {
-//         from: "stafs",
-//         localField: "staf",
-//         foreignField: "_id",
-//         as: "staf"
-//       }
-//     },
-//     { $unwind: "$staf" },
-//     {
-//       $project: {
-//         name: 1,
-//         email: 1,
-//         image: 1,
-//         "staf.work_schedule": 1,
-//         "staf.offDays": 1,
-//         "staf._id": 1,
-//         "staf.f_name": 1,
-//         "staf.middle_name": 1,
-//         "staf.last_name": 1
-//       }
-//     },
-//     {
-//       $match: {
-//         $expr: {
-//           $gt: [
-//             {
-//               $size: {
-//                 $filter: {
-//                   input: "$staf.work_schedule",
-//                   as: "ws",
-//                   cond: {
-//                     $and: [
-//                       { $eq: ["$$ws.day", weekday] },
-//                       { $eq: ["$$ws.willWork", true] },
-//                       {
-//                         $let: {
-//                           vars: {
-//                             startTime: { $arrayElemAt: ["$$ws.times", 0] },
-//                             endTime: { $arrayElemAt: ["$$ws.times", 1] },
-//                             inputTime: timeDate
-//                           },
-//                           in: {
-//                             $and: [
-//                               {
-//                                 $lte: [
-//                                   {
-//                                     $add: [
-//                                       { $multiply: [{ $hour: "$$startTime" }, 3600] },
-//                                       { $multiply: [{ $minute: "$$startTime" }, 60] },
-//                                       { $second: "$$startTime" }
-//                                     ]
-//                                   },
-//                                   {
-//                                     $add: [
-//                                       { $multiply: [{ $hour: "$$inputTime" }, 3600] },
-//                                       { $multiply: [{ $minute: "$$inputTime" }, 60] },
-//                                       { $second: "$$inputTime" }
-//                                     ]
-//                                   }
-//                                 ]
-//                               },
-//                               {
-//                                 $gte: [
-//                                   {
-//                                     $add: [
-//                                       { $multiply: [{ $hour: "$$endTime" }, 3600] },
-//                                       { $multiply: [{ $minute: "$$endTime" }, 60] },
-//                                       { $second: "$$endTime" }
-//                                     ]
-//                                   },
-//                                   {
-//                                     $add: [
-//                                       { $multiply: [{ $hour: "$$inputTime" }, 3600] },
-//                                       { $multiply: [{ $minute: "$$inputTime" }, 60] },
-//                                       { $second: "$$inputTime" }
-//                                     ]
-//                                   }
-//                                 ]
-//                               }
-//                             ]
-//                           }
-//                         }
-//                       }
-//                     ]
-//                   }
-//                 }
-//               }
-//             },
-//             0
-//           ]
-//         }
-//       }
-//     }
-//   ]) as ISStaff[];
-
-//   const finalFreeStaff = [];
-
-//   for (const user of availableUsers) {
-
-//     const isOff = user?.staf.offDays.some(off => {
-//       if (off.dates.some(d => isSameDay(d, date))) return true;
-
-//       if (off.repeat && off.repeat_type === 'weekly') {
-//         return getDay(date) === getDay(off.dates[0]); // same weekday
-//       }
-
-//       return false;
-//     });
-
-//     if (isOff) continue;
-
-//     const hasConflict = await AppointmentOccurrence.exists({
-//       staff_ids: { $in: [new Types.ObjectId(user._id)] },
-//       start_datetime: { $lte: timeDate },
-//       end_datetime: { $gte: timeDate },
-//       status: { $ne: 'cancelled' }
-//     })
-
-//     if (!hasConflict) {
-//       finalFreeStaff.push(user);
-//     }
-
-//   }
-
-//   return finalFreeStaff;
-// };
 
 const getFreeStaff = async (req_date: string, time: string, companyId: string) => {
   const date = new Date(req_date);

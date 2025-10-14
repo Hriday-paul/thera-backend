@@ -13,6 +13,12 @@ router.get(
     auth(USER_ROLE.admin),
     adminControler.statCounts,
 );
+router.post(
+    '/stats/export',
+    auth(USER_ROLE.admin),
+    adminControler.exportStatCount,
+);
+
 router.get(
     '/userChart',
     auth(USER_ROLE.admin),
@@ -34,6 +40,11 @@ router.get(
     '/companies',
     auth(USER_ROLE.admin),
     adminControler.allCompanies,
+);
+router.post(
+    '/export/companies',
+    auth(USER_ROLE.admin),
+    adminControler.exportCompanies,
 );
 router.get(
     '/companies/stats/:id',

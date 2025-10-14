@@ -36,6 +36,7 @@ router.get(
 );
 
 router.get('/', auth(USER_ROLE.admin), paymentsController.getAllPayments);
+router.post('/export', auth(USER_ROLE.admin), paymentsController.exportPayments);
 router.get('/company/:id', auth(USER_ROLE.admin), paymentsController.monthlyPaymentByCompany);
 router.get('/admin/stats', auth(USER_ROLE.admin), paymentsController.purchaseStats);
 

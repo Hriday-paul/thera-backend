@@ -174,7 +174,10 @@ const organizationSchema: Schema<ICompany> = new Schema<ICompany>(
         },
       }
     },
-    patient_tags: { type: [patienttagSchema] }
+    patient_tags: { type: [patienttagSchema] },
+
+    use_appointment_location: { type: Boolean, default: false },
+    auto_set_telehealth_place: { type: Boolean, default: false }
 
   }
 );

@@ -4,6 +4,7 @@ import { paymentsService } from './payments.service';
 import sendResponse from '../../utils/sendResponse';
 import httpStatus from 'http-status';
 import config from '../../config';
+import excelJs from "exceljs"
 
 const checkout = catchAsync(async (req: Request, res: Response) => {
   const result = await paymentsService.checkout(req.body?.package, req.user._id, config.success_url!);
@@ -66,6 +67,44 @@ const getAllPayments = catchAsync(async (req: Request, res: Response) => {
     data: result,
     message: 'All payments retrieved successfully',
   });
+});
+
+const exportPayments = catchAsync(async (req: Request, res: Response) => {
+
+  const result = await paymentsService.getAllPayments(req.query);
+
+  const workbook = new excelJs.Workbook();
+  const workSheet = workbook.addWorksheet("Subscriptions");
+
+  workSheet.columns = [
+    { header: "Transaction ID", key: "tranId", width : 30 },
+    { header: "Company", key: "name", width : 60 },
+    { header: "Plan", key: "title", width : 30  },
+    { header: "Amount", key: "price", width : 10  },
+    { header: "Date", key: "createdAt", width : 20  },
+  ];
+
+  for (let payment of result?.data) {
+    
+    const row = {...payment?.user, ...payment?.package, ...payment }
+    console.log("------payment-----------", row)
+    workSheet.addRow(row);
+  }
+
+  workSheet.getRow(1).eachCell((cell) => {
+    cell.font = { bold: true };
+  });
+
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+
+  res.setHeader("Content-Disposition", `attachement; filename=payments.xlsx`);
+
+  await workbook.xlsx.write(res);
+  res.end();
+
 });
 
 const getPaymentsById = catchAsync(async (req: Request, res: Response) => {
@@ -157,6 +196,7 @@ const purchaseStats = catchAsync(async (req: Request, res: Response) => {
 
 export const paymentsController = {
   getAllPayments,
+  exportPayments,
   getPaymentsById,
   updatePayments,
   deletePayments,
