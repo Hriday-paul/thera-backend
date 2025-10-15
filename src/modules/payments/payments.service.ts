@@ -155,7 +155,7 @@ const confirmPayment = async (query: Record<string, any>) => {
 
 
 const getAllPayments = async (query: Record<string, any>) => {
-  const paymentModel = new QueryBuilder(Payment.find({ isPaid: true }).populate({ path: "user", select: "-password -fcmToken" }).populate({ path: "package" }), query)
+  const paymentModel = new QueryBuilder(Payment.find({ isPaid: true }).populate({ path: "user", select: "-password -fcmToken -createdAt -_id -isDeleted" }).populate({ path: "package", select: "-createdAt -_id -isDeleted" }), query)
     .search(['name', 'email', 'contact'])
     .filter()
     .paginate()
@@ -165,6 +165,7 @@ const getAllPayments = async (query: Record<string, any>) => {
 
   return { data, meta }
 };
+
 
 const getPaymentsByUserId = async (
   userId: string,

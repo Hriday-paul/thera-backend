@@ -77,18 +77,21 @@ const exportPayments = catchAsync(async (req: Request, res: Response) => {
   const workSheet = workbook.addWorksheet("Subscriptions");
 
   workSheet.columns = [
-    { header: "Transaction ID", key: "tranId", width : 30 },
-    { header: "Company", key: "name", width : 60 },
-    { header: "Plan", key: "title", width : 30  },
-    { header: "Amount", key: "price", width : 10  },
-    { header: "Date", key: "createdAt", width : 20  },
+    { header: "Transaction ID", key: "tranId", width: 30 },
+    { header: "Company", key: "name", width: 60 },
+    { header: "Plan", key: "title", width: 30 },
+    { header: "Amount", key: "price", width: 10 },
+    { header: "Date", key: "createdAt", width: 20 },
   ];
 
   for (let payment of result?.data) {
-    
-    const row = {...payment?.user, ...payment?.package, ...payment }
-    console.log("------payment-----------", row)
-    workSheet.addRow(row);
+    workSheet.addRow({
+      tranId: payment?.tranId,
+      name: payment?.user?.name,
+      title: payment?.package?.title,
+      price: payment?.package?.price,
+      createdAt: payment.createdAt,
+    });
   }
 
   workSheet.getRow(1).eachCell((cell) => {
